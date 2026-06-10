@@ -1,0 +1,736 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Directory Preview</title>
+    <style>
+      :root {
+        --bg: #111917;
+        --cyan: #57dfff;
+        --text: #e9fffb;
+        --muted: rgba(233, 255, 251, 0.66);
+        --booth: #4878ff;
+        --sessions: #b45cff;
+        --party: #ff4f28;
+        --contact: #f5b32c;
+        --line: rgba(87, 223, 255, 0.46);
+        --panel: rgba(34, 83, 91, 0.28);
+        --mono: "OCR A Extended", "Lucida Console", Consolas, "Courier New", "Microsoft YaHei", monospace;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        background:
+          radial-gradient(circle at 49% 46%, rgba(60, 105, 92, 0.2), transparent 42%),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 12% 88%, rgba(0, 0, 0, 0.35)),
+          #111917;
+      }
+
+      body::after {
+        opacity: 0.9;
+        mix-blend-mode: screen;
+        background:
+          repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.16) 0 1px, rgba(0, 255, 120, 0.1) 1px 2px, rgba(0, 90, 255, 0.16) 2px 3px, transparent 3px 5px),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 4px);
+        animation: rgbDrift 6.4s linear infinite;
+      }
+
+      .grain,
+      .vignette,
+      .depth-sweep {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .grain {
+        opacity: 0.18;
+        background-image:
+          radial-gradient(circle, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.6px),
+          radial-gradient(circle, rgba(0, 0, 0, 0.6) 0 1px, transparent 1.5px);
+        background-position: 0 0, 3px 3px;
+        background-size: 7px 7px;
+      }
+
+      .vignette {
+        background: radial-gradient(circle at 50% 50%, transparent 0 55%, rgba(0, 0, 0, 0.48) 100%);
+      }
+
+      .depth-sweep {
+        z-index: 1;
+        opacity: 0;
+        mix-blend-mode: screen;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(0, 243, 255, 0.03) 10%,
+          rgba(52, 217, 224, 0.11) 25%,
+          rgba(70, 230, 230, 0.2) 38%,
+          rgba(28, 119, 136, 0.13) 52%,
+          rgba(0, 243, 255, 0.04) 68%,
+          transparent 100%
+        );
+        transform: translateY(-118vh);
+        animation: sweepDepth 5.8s linear infinite;
+        will-change: transform, opacity;
+      }
+
+      .page {
+        position: relative;
+        z-index: 2;
+        width: 100vw;
+        height: 100vh;
+        padding: clamp(28px, 4.7vw, 52px) clamp(40px, 4.7vw, 58px);
+        animation: pageBoot 620ms steps(6, end) both;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr) minmax(560px, 0.46fr);
+        grid-template-rows: auto 1px;
+        align-items: start;
+        column-gap: 0;
+        row-gap: 8px;
+      }
+
+      .logo {
+        display: none;
+        align-items: center;
+        gap: 10px;
+        width: 188px;
+        height: 62px;
+        padding: 8px 12px;
+        border: 2px solid transparent;
+        border-radius: 12px;
+        background:
+          linear-gradient(#111917, #111917) padding-box,
+          linear-gradient(110deg, #f5a33c, #df4f76, #66dfff) border-box;
+        color: #f3f5f0;
+        font-family: Impact, "Arial Black", sans-serif;
+        line-height: 0.84;
+      }
+
+      .logo-mark {
+        position: relative;
+        width: 44px;
+        height: 44px;
+        border: 1px solid rgba(245, 163, 60, 0.9);
+        border-radius: 8px;
+      }
+
+      .logo-mark::before {
+        content: "";
+        position: absolute;
+        inset: 8px;
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at center, #0d1716 0 28%, transparent 29%),
+          radial-gradient(circle, #f5a33c 0 2px, transparent 2.6px);
+        background-size: 100% 100%, 10px 10px;
+      }
+
+      .logo-text {
+        font-size: 24px;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .logo-text span {
+        display: block;
+        background: linear-gradient(90deg, #f5a33c, #e64f86 48%, #63dfff);
+        -webkit-background-clip: text;
+        color: transparent;
+      }
+
+      .sound {
+        grid-column: 1;
+        grid-row: 1;
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-height: 26px;
+        padding-left: 0;
+        color: var(--cyan);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      .sound::after {
+        content: "";
+        width: 7px;
+        height: 7px;
+        background: var(--cyan);
+        box-shadow: 0 0 12px var(--cyan);
+      }
+
+      .top-line {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        height: 1px;
+        background: var(--line);
+        align-self: start;
+        margin-left: 0;
+        transform-origin: left center;
+        animation: lineDraw 900ms cubic-bezier(0.19, 1, 0.22, 1) 180ms both;
+      }
+
+      .ticker {
+        grid-column: 3;
+        grid-row: 1;
+        overflow: hidden;
+        align-self: start;
+        height: 28px;
+        padding: 0 0 0 20px;
+        border-bottom: 0;
+        color: var(--cyan);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-align: left;
+        white-space: nowrap;
+      }
+
+      .ticker span {
+        display: inline-block;
+        padding-top: 0;
+        animation: marquee 24s linear infinite;
+      }
+
+      .dot {
+        position: absolute;
+        left: clamp(54px, 5vw, 68px);
+        top: clamp(100px, 10vw, 112px);
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: radial-gradient(circle at 35% 35%, #fff, #95a8ba 52%, #475466 100%);
+        box-shadow: 0 0 8px rgba(255, 255, 255, 0.38);
+      }
+
+      .directory {
+        width: min(960px, 58vw);
+        margin: clamp(64px, 7vh, 76px) auto 0;
+      }
+
+      .section-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 42px;
+        border-bottom: 1px solid var(--line);
+        color: var(--cyan);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .section-top small {
+        margin-left: 18px;
+        color: rgba(87, 223, 255, 0.82);
+        font-size: 16px;
+        letter-spacing: 0.08em;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 26px;
+        margin-top: 26px;
+      }
+
+      .card {
+        position: relative;
+        height: clamp(350px, 48vh, 462px);
+        padding: 28px;
+        border: 1px solid rgba(87, 223, 255, 0.18);
+        background:
+          linear-gradient(180deg, rgba(87, 223, 255, 0.06), rgba(87, 223, 255, 0.02)),
+          rgba(36, 99, 105, 0.22);
+        cursor: pointer;
+        overflow: hidden;
+        transform: translateY(18px);
+        opacity: 0;
+        animation: cardBoot 700ms cubic-bezier(0.19, 1, 0.22, 1) both;
+        transition:
+          transform 260ms ease,
+          border-color 260ms ease,
+          box-shadow 260ms ease,
+          background 260ms ease,
+          filter 260ms ease;
+      }
+
+      .card:nth-child(1) {
+        animation-delay: 280ms;
+      }
+
+      .card:nth-child(2) {
+        animation-delay: 390ms;
+      }
+
+      .card:nth-child(3) {
+        animation-delay: 500ms;
+      }
+
+      .card::before,
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .card::before {
+        background:
+          radial-gradient(circle at var(--mx, 50%) var(--my, 50%), color-mix(in srgb, var(--accent) 22%, transparent), transparent 22%),
+          linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 58%);
+        transition: opacity 220ms ease;
+      }
+
+      .card::after {
+        width: 38%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transform: translateX(-120%) skewX(-12deg);
+      }
+
+      .card:hover,
+      .card.is-hover {
+        transform: translateY(-9px);
+        border-color: color-mix(in srgb, var(--accent) 70%, var(--cyan));
+        background:
+          linear-gradient(180deg, color-mix(in srgb, var(--accent) 14%, transparent), rgba(87, 223, 255, 0.03)),
+          rgba(36, 99, 105, 0.28);
+        box-shadow:
+          0 0 24px color-mix(in srgb, var(--accent) 30%, transparent),
+          inset 0 0 22px color-mix(in srgb, var(--accent) 14%, transparent);
+        filter: brightness(1.12);
+      }
+
+      .card:hover::before,
+      .card.is-hover::before {
+        opacity: 1;
+      }
+
+      .card:hover::after,
+      .card.is-hover::after {
+        opacity: 1;
+        animation: hoverSweep 680ms cubic-bezier(0.19, 1, 0.22, 1);
+      }
+
+      .card.is-hit {
+        animation: cardHit 260ms steps(2, end);
+      }
+
+      .card code {
+        color: var(--cyan);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+      }
+
+      .card h2 {
+        position: absolute;
+        left: 28px;
+        right: 24px;
+        bottom: 50px;
+        margin: 0;
+        color: rgba(233, 255, 251, 0.9);
+        font-family: "Didot", "Bodoni 72", "Bodoni MT", "Times New Roman", "Songti SC", serif;
+        font-size: clamp(24px, 1.85vw, 32px);
+        font-weight: 300;
+        line-height: 1.18;
+        letter-spacing: 0.01em;
+        transition: color 220ms ease, transform 220ms ease, text-shadow 220ms ease;
+        position: absolute;
+        z-index: 1;
+      }
+
+      .card:hover h2,
+      .card.is-hover h2 {
+        color: #fff;
+        transform: translateX(8px);
+        text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 38%, transparent);
+      }
+
+      .card i {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 18px;
+        height: 2px;
+        background: var(--accent);
+        box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 50%, transparent);
+        transform-origin: left center;
+        animation: fileLinePulse 2.4s ease-in-out infinite;
+      }
+
+      .card:nth-child(1) {
+        --accent: var(--booth);
+      }
+
+      .card:nth-child(2) {
+        --accent: var(--sessions);
+      }
+
+      .card:nth-child(3) {
+        --accent: var(--party);
+      }
+
+      .card:nth-child(4) {
+        --accent: var(--contact);
+      }
+
+      .cta {
+        display: grid;
+        place-items: center;
+        width: 278px;
+        height: 68px;
+        margin: 64px auto 0;
+        border: 1px solid var(--line);
+        color: var(--cyan);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        background: rgba(0, 0, 0, 0.08);
+        cursor: pointer;
+        transition: background 180ms ease, color 180ms ease, box-shadow 180ms ease;
+      }
+
+      .cta:hover {
+        color: #081514;
+        background: var(--cyan);
+        box-shadow: 0 0 18px rgba(87, 223, 255, 0.34);
+      }
+
+      @keyframes marquee {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      @keyframes rgbDrift {
+        to {
+          transform: translateY(16px);
+        }
+      }
+
+      @keyframes pageBoot {
+        0% {
+          opacity: 0;
+          filter: brightness(1.8) blur(2px);
+        }
+        100% {
+          opacity: 1;
+          filter: brightness(1) blur(0);
+        }
+      }
+
+      @keyframes lineDraw {
+        from {
+          transform: scaleX(0);
+          opacity: 0.35;
+        }
+        to {
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes sweepDepth {
+        0% {
+          opacity: 0;
+          transform: translateY(-118vh);
+        }
+        9% {
+          opacity: 0.78;
+        }
+        72% {
+          opacity: 0.78;
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(116vh);
+        }
+      }
+
+      @keyframes cardBoot {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes hoverSweep {
+        from {
+          transform: translateX(-120%) skewX(-12deg);
+        }
+        to {
+          transform: translateX(310%) skewX(-12deg);
+        }
+      }
+
+      @keyframes cardHit {
+        0%,
+        100% {
+          filter: brightness(1);
+        }
+        50% {
+          filter: brightness(1.8) contrast(1.25);
+          transform: translateY(-9px) translateX(4px);
+        }
+      }
+
+      @keyframes fileLinePulse {
+        50% {
+          opacity: 0.72;
+          filter: brightness(1.35);
+        }
+      }
+
+      @media (max-width: 1100px) {
+        .page {
+          padding: 24px;
+        }
+
+        .topbar {
+          grid-template-columns: 170px minmax(0, 1fr) minmax(420px, 0.46fr);
+        }
+
+        .directory {
+          width: min(900px, 82vw);
+        }
+
+        .cards {
+          gap: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="grain"></div>
+    <div class="depth-sweep"></div>
+    <main class="page">
+      <header class="topbar">
+        <div class="logo" aria-label="portfolio labs">
+          <div class="logo-mark"></div>
+          <div class="logo-text"><span>Portfolio</span><span>Labs</span></div>
+        </div>
+        <div class="sound">Sound On</div>
+        <div class="top-line" aria-hidden="true"></div>
+        <div class="ticker">
+          <span>
+            HELLO! WELCOME TO MY PORTFOLIO | HELLO! WELCOME TO MY PORTFOLIO | HELLO! WELCOME TO MY PORTFOLIO |
+          </span>
+        </div>
+      </header>
+
+      <span class="dot"></span>
+
+      <section class="directory" aria-label="directory preview">
+        <div class="section-top">
+          <div>Access Files</div>
+          <div>Visit Portfolio →</div>
+        </div>
+
+        <div class="cards">
+          <article class="card">
+            <code>001//PR</code>
+            <h2>Profile</h2>
+            <i></i>
+          </article>
+          <article class="card">
+            <code>002//WO</code>
+            <h2>Works</h2>
+            <i></i>
+          </article>
+          <article class="card">
+            <code>003//CO</code>
+            <h2>Contact</h2>
+            <i></i>
+          </article>
+        </div>
+
+        <div class="cta">Let's Go</div>
+      </section>
+    </main>
+    <div class="vignette"></div>
+    <script>
+      const cards = [...document.querySelectorAll(".card")];
+      const cta = document.querySelector(".cta");
+      let audioContext;
+      let lastHoverSound = 0;
+      let activeCard = null;
+
+      function getAudio() {
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtor) {
+          return null;
+        }
+
+        if (!audioContext) {
+          audioContext = new AudioCtor();
+        }
+
+        return audioContext;
+      }
+
+      async function playTone(type = "hover") {
+        const ctx = getAudio();
+        if (!ctx) {
+          return;
+        }
+
+        if (ctx.state !== "running") {
+          try {
+            await ctx.resume();
+          } catch (error) {
+            return;
+          }
+        }
+
+        if (ctx.state !== "running") {
+          return;
+        }
+
+        const now = ctx.currentTime;
+        const gain = ctx.createGain();
+        const filter = ctx.createBiquadFilter();
+        const osc = ctx.createOscillator();
+        const osc2 = ctx.createOscillator();
+        const preset = {
+          hover: [520, 1180, 0.07, 0.085],
+          click: [220, 760, 0.13, 0.1]
+        }[type];
+
+        osc.type = "square";
+        osc2.type = "triangle";
+        filter.type = "bandpass";
+        filter.frequency.setValueAtTime(1600, now);
+        filter.Q.setValueAtTime(8, now);
+        osc.frequency.setValueAtTime(preset[0], now);
+        osc.frequency.exponentialRampToValueAtTime(preset[1], now + preset[2]);
+        osc2.frequency.setValueAtTime(preset[0] * 1.48, now);
+        osc2.frequency.exponentialRampToValueAtTime(preset[1] * 1.2, now + preset[2]);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(preset[3], now + 0.008);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + preset[2]);
+        osc.connect(filter);
+        osc2.connect(filter);
+        filter.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + preset[2] + 0.02);
+        osc2.stop(now + preset[2] + 0.02);
+      }
+
+      function playHoverTone() {
+        const now = performance.now();
+        if (now - lastHoverSound < 180) {
+          return;
+        }
+
+        lastHoverSound = now;
+        playTone("hover");
+      }
+
+      function enterCard(card) {
+        if (activeCard === card) {
+          return;
+        }
+
+        if (activeCard) {
+          activeCard.classList.remove("is-hover");
+        }
+
+        activeCard = card;
+        card.classList.add("is-hover");
+        playHoverTone();
+      }
+
+      function leaveCard(card) {
+        card.classList.remove("is-hover");
+        if (activeCard === card) {
+          activeCard = null;
+        }
+      }
+
+      function hit(element) {
+        element.classList.remove("is-hit");
+        void element.offsetWidth;
+        element.classList.add("is-hit");
+      }
+
+      cards.forEach((card) => {
+        card.addEventListener("pointermove", (event) => {
+          const rect = card.getBoundingClientRect();
+          const x = ((event.clientX - rect.left) / rect.width) * 100;
+          const y = ((event.clientY - rect.top) / rect.height) * 100;
+          card.style.setProperty("--mx", `${x}%`);
+          card.style.setProperty("--my", `${y}%`);
+        });
+
+        card.addEventListener("pointerenter", () => {
+          enterCard(card);
+        });
+
+        card.addEventListener("mouseenter", () => {
+          enterCard(card);
+        });
+
+        card.addEventListener("mouseover", () => {
+          enterCard(card);
+        });
+
+        card.addEventListener("pointerleave", () => {
+          leaveCard(card);
+        });
+
+        card.addEventListener("mouseleave", () => {
+          leaveCard(card);
+        });
+
+        card.addEventListener("click", () => {
+          playTone("click");
+          hit(card);
+        });
+      });
+
+      document.addEventListener("pointerdown", () => playTone("hover"), { once: true });
+      document.addEventListener("keydown", () => playTone("hover"), { once: true });
+      cta.addEventListener("pointerenter", () => playHoverTone());
+      cta.addEventListener("mouseover", () => playHoverTone());
+      cta.addEventListener("click", () => {
+        playTone("click");
+        hit(cta);
+      });
+    </script>
+  </body>
+</html>

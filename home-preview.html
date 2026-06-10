@@ -1,0 +1,315 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading Home Preview</title>
+    <style>
+      :root {
+        --cyan: #5de7ff;
+        --orange: #f8a13a;
+        --pink: #ef5ca8;
+        --blue: #7bd9ff;
+        --text: #ecf7f4;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: #101716;
+        color: var(--text);
+        font-family: "OCR A Extended", "Lucida Console", Consolas, "Courier New", "Microsoft YaHei", monospace;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        background:
+          radial-gradient(circle at 50% 46%, rgba(56, 95, 84, 0.22), transparent 36%),
+          linear-gradient(90deg, rgba(255, 0, 0, 0.05), transparent 12% 88%, rgba(0, 120, 255, 0.04)),
+          #111917;
+      }
+
+      body::after {
+        opacity: 0.88;
+        mix-blend-mode: screen;
+        background:
+          repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.12) 0 1px, rgba(0, 255, 120, 0.08) 1px 2px, rgba(0, 90, 255, 0.12) 2px 3px, transparent 3px 5px),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 4px);
+        animation: crtDrift 5.4s linear infinite;
+      }
+
+      .screen {
+        position: relative;
+        display: grid;
+        width: 100vw;
+        height: 100vh;
+        place-items: center;
+        isolation: isolate;
+      }
+
+      .grain {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        opacity: 0.2;
+        background-image:
+          radial-gradient(circle, rgba(255, 255, 255, 0.48) 0 1px, transparent 1.4px),
+          radial-gradient(circle, rgba(0, 0, 0, 0.6) 0 1px, transparent 1.6px);
+        background-position: 0 0, 3px 3px;
+        background-size: 7px 7px;
+      }
+
+      .loading-stack {
+        position: absolute;
+        left: 48.3%;
+        top: 50%;
+        z-index: 2;
+        display: grid;
+        justify-items: center;
+        width: min(1080px, 94vw);
+        transform: translate(-50%, -50%);
+      }
+
+      .hero-copy {
+        display: grid;
+        justify-items: center;
+        width: 100%;
+        min-height: 242px;
+        align-content: center;
+      }
+
+      .kicker {
+        margin: 0 0 26px;
+        color: var(--cyan);
+        font-size: clamp(18px, 1.65vw, 28px);
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        line-height: 1;
+        text-transform: uppercase;
+        text-shadow: 0 0 12px rgba(93, 231, 255, 0.72);
+        opacity: 0;
+        animation: lineReveal 520ms steps(5, end) 180ms forwards, textFlicker 2.2s linear 740ms infinite;
+      }
+
+      .portfolio {
+        margin: 0;
+        color: var(--text);
+        font-family: "Arial Black", Impact, "OCR A Extended", "Microsoft YaHei", sans-serif;
+        font-size: clamp(82px, 12.6vw, 212px);
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 0.94;
+        text-align: center;
+        text-transform: uppercase;
+        text-shadow:
+          0 0 16px rgba(255, 255, 255, 0.26),
+          2px 0 0 rgba(255, 58, 80, 0.18),
+          -2px 0 0 rgba(35, 216, 255, 0.2);
+        opacity: 0;
+        filter: blur(5px);
+        animation: titleBoot 760ms cubic-bezier(0.19, 1, 0.22, 1) 480ms forwards, titleGlitch 3.8s steps(2, end) 1.45s infinite;
+      }
+
+      .portfolio span {
+        display: block;
+        margin-top: 11px;
+        color: #fff;
+        font-size: inherit;
+      }
+
+      .presented {
+        display: flex;
+        align-items: center;
+        gap: clamp(10px, 1.4vw, 18px);
+        margin-top: 30px;
+        color: rgba(236, 247, 244, 0.92);
+        font-family: Impact, "Arial Black", "Microsoft YaHei", sans-serif;
+        font-size: clamp(30px, 4vw, 58px);
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        text-shadow:
+          0 0 14px rgba(255, 255, 255, 0.18),
+          2px 0 0 rgba(255, 58, 80, 0.14),
+          -2px 0 0 rgba(35, 216, 255, 0.16);
+      }
+
+      .presented i {
+        width: clamp(28px, 3vw, 42px);
+        height: clamp(28px, 3vw, 42px);
+        border-radius: 50%;
+        background:
+          radial-gradient(circle at 50% 50%, transparent 0 25%, #fff 26% 33%, transparent 34%),
+          conic-gradient(from 0deg, #fff 0 10deg, transparent 10deg 25deg, #fff 25deg 35deg, transparent 35deg 50deg, #fff 50deg 60deg, transparent 60deg 75deg, #fff 75deg 85deg, transparent 85deg 100deg, #fff 100deg 110deg, transparent 110deg 125deg, #fff 125deg 135deg, transparent 135deg 150deg, #fff 150deg 160deg, transparent 160deg 175deg, #fff 175deg 185deg, transparent 185deg 200deg, #fff 200deg 210deg, transparent 210deg 225deg, #fff 225deg 235deg, transparent 235deg 250deg, #fff 250deg 260deg, transparent 260deg 275deg, #fff 275deg 285deg, transparent 285deg 300deg, #fff 300deg 310deg, transparent 310deg 325deg, #fff 325deg 335deg, transparent 335deg 360deg);
+      }
+
+      .progress-shell {
+        width: clamp(320px, 41vw, 470px);
+        height: clamp(28px, 2.8vw, 32px);
+        margin-top: 24px;
+        padding: 5px 6px;
+        border: 1px solid rgba(93, 231, 255, 0.45);
+        background: rgba(0, 0, 0, 0.08);
+        opacity: 0;
+        animation: lineReveal 380ms steps(4, end) 1.05s forwards;
+      }
+
+      .progress-fill {
+        width: 0;
+        height: 100%;
+        background: linear-gradient(90deg, #f5a33c 0%, #ff8444 24%, #ee5b80 47%, #c563df 70%, #76daf4 100%);
+        box-shadow: 0 0 12px rgba(123, 217, 255, 0.22);
+        animation: loadFill 3.1s cubic-bezier(0.19, 1, 0.22, 1) 1.18s forwards, barPulse 1.1s ease-in-out 4.35s infinite;
+      }
+
+      .vignette {
+        position: absolute;
+        inset: 0;
+        z-index: 3;
+        pointer-events: none;
+        background:
+          radial-gradient(circle at 50% 50%, transparent 0 54%, rgba(0, 0, 0, 0.45) 100%),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 12% 88%, rgba(0, 0, 0, 0.35));
+      }
+
+      @media (max-width: 900px) {
+        .loading-stack {
+          width: 94vw;
+        }
+
+        .portfolio {
+          font-size: clamp(58px, 13.4vw, 104px);
+          letter-spacing: 0;
+        }
+
+        .progress-shell {
+          width: min(420px, 72vw);
+        }
+      }
+
+      @keyframes crtDrift {
+        to {
+          transform: translateY(12px);
+        }
+      }
+
+      @keyframes lineReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        55% {
+          opacity: 1;
+          filter: brightness(1.8);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes titleBoot {
+        0% {
+          opacity: 0;
+          filter: blur(8px) brightness(2);
+          transform: scaleX(0.92);
+        }
+        44% {
+          opacity: 1;
+          filter: blur(1px) brightness(1.7);
+          transform: scaleX(1.025);
+        }
+        100% {
+          opacity: 1;
+          filter: blur(0) brightness(1);
+          transform: scaleX(1);
+        }
+      }
+
+      @keyframes titleGlitch {
+        0%,
+        88%,
+        100% {
+          text-shadow:
+            0 0 16px rgba(255, 255, 255, 0.26),
+            2px 0 0 rgba(255, 58, 80, 0.18),
+            -2px 0 0 rgba(35, 216, 255, 0.2);
+          transform: translateX(0);
+        }
+        90% {
+          text-shadow:
+            0 0 20px rgba(255, 255, 255, 0.34),
+            5px 0 0 rgba(255, 58, 80, 0.22),
+            -5px 0 0 rgba(35, 216, 255, 0.24);
+          transform: translateX(-2px);
+        }
+        92% {
+          transform: translateX(3px);
+        }
+      }
+
+      @keyframes loadFill {
+        0% {
+          width: 0;
+          filter: brightness(1.4);
+        }
+        42% {
+          width: 36%;
+        }
+        74% {
+          width: 77%;
+        }
+        100% {
+          width: 91%;
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes barPulse {
+        50% {
+          filter: brightness(1.16);
+        }
+      }
+
+      @keyframes textFlicker {
+        0%,
+        94%,
+        100% {
+          opacity: 1;
+        }
+        96% {
+          opacity: 0.62;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="screen">
+      <div class="grain"></div>
+      <section class="loading-stack" aria-label="首页加载视觉稿">
+        <div class="hero-copy">
+          <p class="kicker">Welcome to my</p>
+          <h1 class="portfolio"><span>portfolio</span></h1>
+        </div>
+        <div class="progress-shell" aria-hidden="true">
+          <div class="progress-fill"></div>
+        </div>
+      </section>
+      <div class="vignette"></div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,690 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Profile Preview</title>
+    <style>
+      :root {
+        --bg: #111917;
+        --blue: #4878ff;
+        --cyan: #66e6ff;
+        --line: rgba(72, 120, 255, 0.58);
+        --text: #efffff;
+        --muted: rgba(239, 255, 255, 0.72);
+        --mono: "OCR A Extended", "Lucida Console", Consolas, "Courier New", monospace;
+        --serif: Didot, "Bodoni 72", "Bodoni MT", "Times New Roman", serif;
+        --sans: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+      }
+
+      body {
+        cursor: none;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        background:
+          radial-gradient(circle at 23% 44%, rgba(92, 62, 128, 0.3), transparent 42%),
+          radial-gradient(circle at 78% 47%, rgba(30, 108, 108, 0.18), transparent 38%),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 12% 88%, rgba(0, 0, 0, 0.35)),
+          #111917;
+      }
+
+      body::after {
+        opacity: 0.84;
+        mix-blend-mode: screen;
+        background:
+          repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.14) 0 1px, rgba(0, 255, 120, 0.08) 1px 2px, rgba(0, 90, 255, 0.14) 2px 3px, transparent 3px 5px),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 4px);
+        animation: crtFlicker 4.8s steps(6) infinite;
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: 100vw;
+        height: 100vh;
+        padding: 34px 22px 0;
+        animation: screenBoot 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .cursor-dot {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 4;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--blue);
+        box-shadow: 0 0 10px rgba(72, 120, 255, 0.78);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        transition:
+          width 150ms ease,
+          height 150ms ease;
+      }
+
+      .cursor-dot.is-hover {
+        width: 12px;
+        height: 12px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        align-items: start;
+        min-height: 74px;
+        border-bottom: 1px solid rgba(72, 120, 255, 0.48);
+      }
+
+      .sound {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: max-content;
+        color: var(--blue);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        user-select: none;
+        transition:
+          color 160ms ease,
+          text-shadow 160ms ease,
+          transform 160ms ease;
+      }
+
+      .sound:hover,
+      .sound.is-on {
+        color: #79a1ff;
+        text-shadow: 0 0 11px rgba(72, 120, 255, 0.86);
+        transform: translateX(2px);
+      }
+
+      .sound::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--blue);
+      }
+
+      .ticker {
+        justify-self: end;
+        overflow: hidden;
+        width: min(930px, 64vw);
+        color: var(--blue);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        white-space: nowrap;
+      }
+
+      .ticker span {
+        display: inline-block;
+        min-width: 200%;
+        animation: marquee 22s linear infinite;
+      }
+
+      .stripe-row {
+        position: relative;
+        height: 88px;
+        border-bottom: 2px solid var(--line);
+      }
+
+      .stripe {
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        width: 270px;
+        height: 48px;
+        background:
+          linear-gradient(
+            55deg,
+            transparent 0 116px,
+            #111917 117px 129px,
+            transparent 130px 193px,
+            #111917 194px 206px,
+            transparent 207px
+          ),
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.11) 0 1px, transparent 1px 8px),
+          linear-gradient(90deg, #4878ff 0%, #5d90ff 100%);
+        clip-path: polygon(0 0, 84% 0, 100% 100%, 0 100%);
+        animation: stripeLoad 920ms cubic-bezier(0.18, 0.88, 0.24, 1) both;
+        transition:
+          filter 160ms ease,
+          transform 160ms ease;
+      }
+
+      .stripe:hover {
+        filter: brightness(1.25) saturate(1.2);
+        transform: translateX(4px);
+      }
+
+      .close-x {
+        position: absolute;
+        right: 12px;
+        bottom: 18px;
+        color: var(--blue);
+        font-size: 40px;
+        line-height: 1;
+        user-select: none;
+        transition:
+          color 150ms ease,
+          text-shadow 150ms ease,
+          transform 150ms ease;
+      }
+
+      .close-x:hover {
+        color: var(--cyan);
+        text-shadow: 0 0 12px rgba(102, 230, 255, 0.9);
+        transform: scale(1.06);
+      }
+
+      .main {
+        display: grid;
+        grid-template-columns: minmax(560px, 650px) minmax(780px, 1fr);
+        gap: 58px;
+        height: calc(100vh - 196px);
+        padding-top: 20px;
+      }
+
+      .intro {
+        padding-left: 18px;
+        animation: revealUp 780ms 160ms ease both;
+      }
+
+      .code {
+        color: var(--blue);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+      }
+
+      h1 {
+        margin: 36px 0 24px;
+        font-family: var(--serif);
+        font-size: clamp(78px, 5.4vw, 104px);
+        font-weight: 300;
+        line-height: 0.88;
+        letter-spacing: 0;
+      }
+
+      .intro p {
+        width: min(600px, 92%);
+        margin: 0;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: clamp(22px, 1.45vw, 27px);
+        font-weight: 400;
+        line-height: 1.28;
+        text-align: justify;
+        text-align-last: left;
+        hyphens: auto;
+      }
+
+      .profile-panel {
+        align-self: start;
+        display: grid;
+        grid-template-columns: 230px minmax(390px, 0.92fr) minmax(470px, 1.08fr);
+        grid-template-rows: 130px 135px 333px;
+        width: 100%;
+        height: 598px;
+        margin-left: auto;
+        border: 1px solid var(--line);
+        border-left: 10px solid var(--blue);
+        background: rgba(15, 29, 35, 0.2);
+        animation: panelIn 820ms 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .profile-panel:hover {
+        border-color: rgba(102, 230, 255, 0.72);
+        box-shadow: 0 0 28px rgba(91, 143, 219, 0.16);
+      }
+
+      .cell {
+        min-width: 0;
+        min-height: 0;
+        padding: 28px 34px;
+        border-right: 1px solid rgba(91, 143, 219, 0.34);
+        border-bottom: 1px solid rgba(91, 143, 219, 0.34);
+        transition:
+          background 150ms ease,
+          border-color 150ms ease,
+          transform 150ms ease,
+          color 150ms ease;
+      }
+
+      .cell:hover {
+        background: rgba(91, 143, 219, 0.075);
+        border-color: rgba(102, 230, 255, 0.6);
+      }
+
+      .photo-cell {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        padding: 24px 40px 28px;
+      }
+
+      .education {
+        grid-column: 2 / 4;
+        grid-row: 1;
+        padding-left: 58px;
+      }
+
+      .post {
+        grid-column: 2 / 4;
+        grid-row: 2;
+        padding-left: 58px;
+      }
+
+      .skills {
+        grid-column: 1 / 3;
+        grid-row: 3;
+        border-bottom: 0;
+        padding-top: 24px;
+        padding-right: 42px;
+      }
+
+      .experience {
+        grid-column: 3;
+        grid-row: 3;
+        border-right: 0;
+        border-bottom: 0;
+        padding-top: 24px;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 24px;
+        color: var(--blue);
+        font-family: var(--sans);
+        font-size: 20px;
+        font-weight: 400;
+        letter-spacing: 0;
+        text-transform: uppercase;
+      }
+
+      .photo {
+        display: block;
+        width: 152px;
+        height: 202px;
+        object-fit: cover;
+        object-position: center top;
+        background: #fff;
+        transition:
+          filter 160ms ease,
+          transform 160ms ease;
+      }
+
+      .photo-cell:hover .photo {
+        filter: contrast(1.08) saturate(1.08);
+        transform: translateY(-2px);
+      }
+
+      .education h2 {
+        margin: 0;
+        font-family: var(--sans);
+        font-size: 22px;
+        font-weight: 400;
+        line-height: 1.2;
+      }
+
+      .post p,
+      .skills p,
+      .experience p {
+        margin: 0;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.28;
+      }
+
+      .skills p {
+        max-width: 650px;
+        font-size: 17px;
+        line-height: 1.48;
+      }
+
+      .experience p {
+        font-size: 17px;
+        line-height: 1.42;
+      }
+
+      .vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 50%, transparent 0 56%, rgba(0, 0, 0, 0.5) 100%);
+      }
+
+      .scan-sweep {
+        position: fixed;
+        inset: -40vh 0 auto;
+        z-index: 2;
+        height: 38vh;
+        pointer-events: none;
+        opacity: 0.48;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(91, 143, 219, 0.04) 24%,
+          rgba(91, 143, 219, 0.18) 52%,
+          rgba(102, 230, 255, 0.08) 72%,
+          transparent 100%
+        );
+        mix-blend-mode: screen;
+        animation: sweepDown 3.8s linear infinite;
+      }
+
+      .cursor-pulse {
+        position: fixed;
+        z-index: 4;
+        width: 34px;
+        height: 34px;
+        pointer-events: none;
+        border: 1px solid rgba(102, 230, 255, 0.74);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0.4);
+        opacity: 0;
+        animation: pulse 520ms ease-out forwards;
+      }
+
+      @keyframes screenBoot {
+        0% {
+          opacity: 0;
+          filter: brightness(2.4) blur(5px);
+          transform: scaleY(0.985);
+        }
+        38% {
+          opacity: 1;
+          filter: brightness(1.65) blur(1px);
+        }
+        100% {
+          opacity: 1;
+          filter: brightness(1) blur(0);
+          transform: scaleY(1);
+        }
+      }
+
+      @keyframes revealUp {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes panelIn {
+        0% {
+          opacity: 0;
+          clip-path: inset(0 100% 0 0);
+        }
+        55% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+          clip-path: inset(0);
+        }
+      }
+
+      @keyframes stripeLoad {
+        from {
+          opacity: 0;
+          transform: scaleX(0.22);
+          transform-origin: left bottom;
+        }
+        to {
+          opacity: 1;
+          transform: scaleX(1);
+          transform-origin: left bottom;
+        }
+      }
+
+      @keyframes sweepDown {
+        from {
+          transform: translateY(-20vh);
+        }
+        to {
+          transform: translateY(150vh);
+        }
+      }
+
+      @keyframes crtFlicker {
+        0%,
+        100% {
+          opacity: 0.84;
+        }
+        50% {
+          opacity: 0.78;
+        }
+        52% {
+          opacity: 0.9;
+        }
+      }
+
+      @keyframes tickerGlitch {
+        0%,
+        89%,
+        100% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        90% {
+          transform: translateX(2px);
+          opacity: 0.82;
+        }
+        91% {
+          transform: translateX(-1px);
+          opacity: 1;
+        }
+      }
+
+      @keyframes marquee {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.8;
+          transform: translate(-50%, -50%) scale(0.42);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.8);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 1ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 1ms !important;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cursor-dot" aria-hidden="true"></div>
+    <main class="page">
+      <header class="topbar">
+        <div class="sound is-on" role="button" tabindex="0" aria-label="Toggle sound">Sound On</div>
+        <div class="ticker">
+          <span>HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio |</span>
+        </div>
+      </header>
+
+      <div class="stripe-row">
+        <div class="stripe"></div>
+        <div class="close-x">X</div>
+      </div>
+
+      <section class="main">
+        <aside class="intro">
+          <div class="code">001//PR</div>
+          <h1>I'M<br />YANGZHAN</h1>
+          <p>
+            As a designer, I am passionate about creation and strive for the perfect blend of beauty and functionality. In my
+            design philosophy, every piece carries a unique meaning--reflecting insights and distillations of life itself. I
+            firmly believe that design is not only an expression of art but also a tool for solving real-world problems.
+          </p>
+        </aside>
+
+        <section class="profile-panel">
+          <article class="cell photo-cell">
+            <img class="photo" src="assets/yang-zhan.jpg" alt="Yang Zhan portrait" />
+          </article>
+
+          <article class="cell education">
+            <span class="label">Education</span>
+            <h2>Master's Degree</h2>
+          </article>
+
+          <article class="cell post">
+            <span class="label">Post</span>
+            <p>Brand Designer / Visual Designer</p>
+          </article>
+
+          <article class="cell skills">
+            <span class="label">Skills</span>
+            <p>
+              Brand refresh | VI systems and brand manuals | Logo and application guidelines | Typography, color and layout systems |
+              Website and social media brand touchpoint alignment | Exhibition and event material systems | Information hierarchy and
+              visual standard documentation
+            </p>
+          </article>
+
+          <article class="cell experience">
+            <span class="label">Experience</span>
+            <p>
+              2019.05-09<br />
+              Ctrip International Travel Business Design Assistant<br />
+              2020.06-08<br />
+              Transsion Holdings Marketing Design Assistant<br />
+              2020.11-21.09<br />
+              Jiafuyi Intelligent Info Graphic Designer, Operations<br />
+              2021.10-24.11<br />
+              Bodao Smart Shenzhen Graphic Designer, Brand
+            </p>
+          </article>
+        </section>
+      </section>
+    </main>
+    <div class="vignette"></div>
+    <div class="scan-sweep"></div>
+    <script>
+      (() => {
+        const soundToggle = document.querySelector(".sound");
+        const targets = document.querySelectorAll(".sound, .stripe, .close-x, .cell");
+        const cursorDot = document.querySelector(".cursor-dot");
+        let enabled = true;
+        let ctx;
+
+        const ensureAudio = () => {
+          if (!ctx) {
+            ctx = new (window.AudioContext || window.webkitAudioContext)();
+          }
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+          return ctx;
+        };
+
+        const tone = (frequency = 680, duration = 0.055, gainValue = 0.18, type = "square") => {
+          if (!enabled) return;
+          const audio = ensureAudio();
+          const osc = audio.createOscillator();
+          const gain = audio.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(frequency, audio.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(frequency * 0.72, audio.currentTime + duration);
+          gain.gain.setValueAtTime(0.0001, audio.currentTime);
+          gain.gain.exponentialRampToValueAtTime(gainValue, audio.currentTime + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audio.destination);
+          osc.start();
+          osc.stop(audio.currentTime + duration);
+        };
+
+        const pulse = (event) => {
+          const marker = document.createElement("span");
+          marker.className = "cursor-pulse";
+          marker.style.left = `${event.clientX}px`;
+          marker.style.top = `${event.clientY}px`;
+          document.body.appendChild(marker);
+          marker.addEventListener("animationend", () => marker.remove(), { once: true });
+        };
+
+        window.addEventListener("pointerdown", () => ensureAudio(), { once: true });
+
+        document.addEventListener("pointermove", (event) => {
+          cursorDot.style.left = `${event.clientX}px`;
+          cursorDot.style.top = `${event.clientY}px`;
+          cursorDot.style.opacity = "1";
+        });
+
+        targets.forEach((target) => {
+          target.addEventListener("pointerenter", () => {
+            cursorDot.classList.add("is-hover");
+            tone(920, 0.045, 0.16, "square");
+          });
+          target.addEventListener("pointerleave", () => {
+            cursorDot.classList.remove("is-hover");
+          });
+          target.addEventListener("pointerdown", (event) => {
+            pulse(event);
+            tone(420, 0.09, 0.22, "sawtooth");
+          });
+        });
+
+        soundToggle.addEventListener("click", () => {
+          enabled = !enabled;
+          soundToggle.classList.toggle("is-on", enabled);
+          soundToggle.textContent = enabled ? "Sound On" : "Sound Off";
+          if (enabled) tone(780, 0.08, 0.2, "square");
+        });
+
+        document.querySelector(".close-x").addEventListener("click", () => {
+          sessionStorage.setItem("portfolioReturnDirectory", "1");
+          window.location.replace("index.html#directory");
+        });
+      })();
+    </script>
+  </body>
+</html>

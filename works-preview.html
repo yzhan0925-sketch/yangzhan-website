@@ -1,0 +1,1007 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Works Preview</title>
+    <style>
+      :root {
+        --bg: #111917;
+        --purple: #ff4f28;
+        --purple-deep: #b73520;
+        --purple-soft: rgba(255, 79, 40, 0.56);
+        --cyan: #66e6ff;
+        --text: #f2ffff;
+        --muted: rgba(242, 255, 255, 0.72);
+        --line: rgba(255, 79, 40, 0.58);
+        --mono: "OCR A Extended", "Lucida Console", Consolas, "Courier New", monospace;
+        --serif: Didot, "Bodoni 72", "Bodoni MT", "Times New Roman", serif;
+        --sans: "Helvetica Neue", Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        font-family: var(--mono);
+        cursor: none;
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        background:
+          radial-gradient(circle at 22% 48%, rgba(120, 51, 164, 0.34), transparent 43%),
+          radial-gradient(circle at 72% 45%, rgba(78, 34, 146, 0.28), transparent 40%),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 13% 88%, rgba(0, 0, 0, 0.36)),
+          #111917;
+      }
+
+      body::after {
+        opacity: 0.86;
+        mix-blend-mode: screen;
+        background:
+          repeating-linear-gradient(90deg, rgba(255, 0, 70, 0.13) 0 1px, rgba(0, 255, 120, 0.08) 1px 2px, rgba(55, 80, 255, 0.16) 2px 3px, transparent 3px 5px),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.05) 0 1px, transparent 1px 4px);
+        animation: crtFlicker 4.8s steps(6) infinite;
+      }
+
+      .page {
+        position: relative;
+        z-index: 1;
+        width: 100vw;
+        height: 100vh;
+        padding: 34px 22px 0;
+        animation: screenBoot 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .cursor-dot {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 30;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--purple);
+        box-shadow: 0 0 10px rgba(255, 79, 40, 0.78);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        transition:
+          width 150ms ease,
+          height 150ms ease,
+          background 150ms ease,
+          box-shadow 150ms ease;
+      }
+
+      .cursor-dot.is-hover {
+        width: 12px;
+        height: 12px;
+      }
+
+      .topbar {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        align-items: start;
+        min-height: 74px;
+        border-bottom: 1px solid rgba(255, 79, 40, 0.52);
+      }
+
+      .sound {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: max-content;
+        color: var(--purple);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        cursor: none;
+        user-select: none;
+        transition:
+          color 160ms ease,
+          text-shadow 160ms ease,
+          transform 160ms ease;
+      }
+
+      .sound:hover,
+      .sound.is-on {
+        color: #ff7c45;
+        text-shadow: 0 0 12px rgba(255, 79, 40, 0.88);
+        transform: translateX(2px);
+      }
+
+      .sound::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--purple);
+      }
+
+      .ticker {
+        justify-self: end;
+        overflow: hidden;
+        width: min(930px, 64vw);
+        color: var(--purple);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        white-space: nowrap;
+      }
+
+      .ticker span {
+        display: inline-block;
+        min-width: 200%;
+        animation: marquee 22s linear infinite;
+      }
+
+      .stripe-row {
+        position: relative;
+        height: 88px;
+        border-bottom: 2px solid var(--line);
+      }
+
+      .stripe {
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        width: 316px;
+        height: 48px;
+        background:
+          linear-gradient(55deg, transparent 0 132px, #111917 133px 145px, transparent 146px 214px, #111917 215px 227px, transparent 228px),
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.11) 0 1px, transparent 1px 8px),
+          linear-gradient(90deg, #ff6a2f 0%, #ff4f28 100%);
+        clip-path: polygon(0 0, 86% 0, 100% 100%, 0 100%);
+        animation: stripeLoad 920ms cubic-bezier(0.18, 0.88, 0.24, 1) both;
+        transition:
+          filter 160ms ease,
+          transform 160ms ease;
+      }
+
+      .stripe:hover {
+        filter: brightness(1.22) saturate(1.16);
+        transform: translateX(4px);
+      }
+
+      .project-tabs {
+        position: absolute;
+        right: 54px;
+        bottom: -1px;
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        width: min(790px, 45vw);
+        height: 48px;
+        border-bottom: 2px solid var(--line);
+      }
+
+      .project-tabs span {
+        position: relative;
+        display: grid;
+        place-items: center;
+        height: 48px;
+        border: 1px solid rgba(255, 79, 40, 0.4);
+        border-bottom: 0;
+        color: rgba(255, 142, 92, 0.9);
+        font-size: 15px;
+        font-weight: 700;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        background: rgba(38, 16, 52, 0.34);
+        cursor: none;
+        user-select: none;
+        transition:
+          background 180ms ease,
+          color 180ms ease,
+          text-shadow 180ms ease,
+          transform 180ms ease;
+      }
+
+      .project-tabs span:first-child {
+        border-left: 1px solid rgba(255, 79, 40, 0.4);
+      }
+
+      .project-tabs .is-active {
+        color: #fff;
+        background:
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.12) 0 1px, transparent 1px 8px),
+          linear-gradient(90deg, rgba(255, 93, 45, 0.85), rgba(255, 121, 62, 0.92));
+        box-shadow: inset 0 0 24px rgba(255, 255, 255, 0.08);
+      }
+
+      .project-tabs span:hover {
+        color: #fff;
+        text-shadow: 0 0 12px rgba(255, 79, 40, 0.88);
+      }
+
+      .project-tabs span:not(.is-active) {
+        transform: translateY(8px);
+        height: 40px;
+      }
+
+      .close-x {
+        position: absolute;
+        right: 12px;
+        bottom: -2px;
+        color: var(--purple);
+        font-size: 40px;
+        line-height: 1;
+        cursor: none;
+        user-select: none;
+        transition:
+          color 150ms ease,
+          text-shadow 150ms ease,
+          transform 150ms ease;
+      }
+
+      .close-x:hover {
+        color: #ff9a63;
+        text-shadow: 0 0 12px rgba(255, 79, 40, 0.92);
+        transform: scale(1.06);
+      }
+
+      .main {
+        display: grid;
+        grid-template-columns: minmax(520px, 0.36fr) minmax(940px, 0.64fr);
+        gap: 0;
+        height: calc(100vh - 196px);
+        padding-top: 20px;
+      }
+
+      .intro {
+        position: relative;
+        padding-left: 18px;
+        padding-right: 34px;
+        animation: revealUp 780ms 160ms ease both;
+      }
+
+      .code {
+        color: var(--purple);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+      }
+
+      h1 {
+        margin: 28px 0 24px;
+        font-family: var(--serif);
+        font-size: clamp(44px, 3.8vw, 72px);
+        font-weight: 300;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      .intro p {
+        width: min(520px, 92%);
+        margin: 0;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: clamp(21px, 1.35vw, 25px);
+        line-height: 1.32;
+      }
+
+      .slide-control {
+        position: absolute;
+        left: 18px;
+        right: 0;
+        bottom: 206px;
+        display: grid;
+        grid-template-columns: 64px auto 64px minmax(0, 1fr);
+        align-items: center;
+        gap: 18px;
+        z-index: 2;
+      }
+
+      .arrow {
+        display: grid;
+        place-items: center;
+        width: 64px;
+        height: 64px;
+        border: 1px solid var(--line);
+        background: rgba(20, 9, 32, 0.1);
+        color: var(--purple);
+        font-size: 42px;
+        font-family: var(--serif);
+        line-height: 1;
+        cursor: none;
+        user-select: none;
+        transition:
+          background 160ms ease,
+          box-shadow 160ms ease,
+          color 160ms ease,
+          transform 160ms ease;
+      }
+
+      .arrow:hover {
+        color: #fff;
+        background: rgba(255, 79, 40, 0.16);
+        box-shadow: 0 0 18px rgba(255, 79, 40, 0.22);
+        transform: translateY(-2px);
+      }
+
+      .dots {
+        display: flex;
+        gap: 10px;
+      }
+
+      .dots i {
+        width: 15px;
+        height: 15px;
+        border: 1px solid var(--purple);
+        cursor: none;
+        transition:
+          background 140ms ease,
+          box-shadow 140ms ease,
+          transform 140ms ease;
+      }
+
+      .dots i.is-active {
+        background: var(--purple);
+        box-shadow: 0 0 12px rgba(255, 79, 40, 0.66);
+      }
+
+      .dots i:hover {
+        transform: scale(1.12);
+      }
+
+      .control-line {
+        width: calc(100% + 18px);
+        height: 1px;
+        background: var(--line);
+        transform: translateX(-18px);
+        animation: linePulse 2.6s ease-in-out infinite;
+      }
+
+      .works-panel {
+        align-self: start;
+        display: block;
+        width: 100%;
+        height: 598px;
+        border: 1px solid var(--line);
+        border-left: 10px solid var(--purple);
+        background: rgba(40, 18, 58, 0.22);
+        animation: panelIn 820ms 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .project-info {
+        display: none;
+      }
+
+      .meta {
+        display: none;
+      }
+
+      .gallery {
+        display: block;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+      }
+
+      .main-image {
+        width: 100%;
+        height: 100%;
+        padding: 18px 24px;
+      }
+
+      .main-image img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        transform: scale(1.08);
+        border: 0;
+        background: transparent;
+        filter: saturate(0.82) contrast(1.02);
+        cursor: none;
+        transition:
+          opacity 180ms ease,
+          filter 180ms ease,
+          transform 180ms ease;
+      }
+
+      .main-image.is-switching img {
+        opacity: 0.18;
+        filter: saturate(0.55) contrast(1.35) hue-rotate(18deg);
+        transform: scale(1.08) translateX(10px);
+      }
+
+      .thumbs {
+        display: none;
+      }
+
+      .thumbs img {
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        object-fit: cover;
+        border-bottom: 1px solid rgba(255, 79, 40, 0.34);
+        filter: saturate(0.72) contrast(1.08) hue-rotate(6deg);
+      }
+
+      .thumbs img:last-child {
+        border-bottom: 0;
+      }
+
+      .project-list {
+        display: none;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 20px;
+        color: var(--purple);
+        font-family: var(--sans);
+        font-size: 18px;
+        font-weight: 400;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+
+      .project-info h2 {
+        margin: 0;
+        max-width: 760px;
+        font-family: var(--sans);
+        font-size: 30px;
+        font-weight: 300;
+        line-height: 1.18;
+      }
+
+      .topic-copy {
+        padding: 24px 34px;
+      }
+
+      .meta p,
+      .project-list p {
+        margin: 0;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 18px;
+        line-height: 1.5;
+      }
+
+      .project-list p + p {
+        margin-top: 26px;
+      }
+
+      .vignette {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background: radial-gradient(circle at 50% 50%, transparent 0 56%, rgba(0, 0, 0, 0.54) 100%);
+      }
+
+      .scan-sweep {
+        position: fixed;
+        inset: -40vh 0 auto;
+        z-index: 2;
+        height: 38vh;
+        pointer-events: none;
+        opacity: 0.42;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(255, 79, 40, 0.04) 24%,
+          rgba(255, 79, 40, 0.2) 52%,
+          rgba(102, 230, 255, 0.07) 72%,
+          transparent 100%
+        );
+        mix-blend-mode: screen;
+        animation: sweepDown 3.9s linear infinite;
+      }
+
+      .cursor-pulse {
+        position: fixed;
+        z-index: 4;
+        width: 34px;
+        height: 34px;
+        pointer-events: none;
+        border: 1px solid rgba(197, 140, 255, 0.78);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0.4);
+        opacity: 0;
+        animation: pulse 520ms ease-out forwards;
+      }
+
+      .lightbox {
+        position: fixed;
+        inset: 0;
+        z-index: 9;
+        display: grid;
+        place-items: center;
+        padding: 34px;
+        background:
+          radial-gradient(circle at center, rgba(69, 28, 109, 0.42), rgba(3, 6, 6, 0.92) 70%),
+          rgba(0, 0, 0, 0.86);
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 180ms ease,
+          visibility 180ms ease;
+      }
+
+      .lightbox.is-open {
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+
+      .lightbox img {
+        display: block;
+        max-width: min(92vw, 1480px);
+        max-height: 90vh;
+        object-fit: contain;
+        cursor: none;
+        box-shadow: 0 0 42px rgba(255, 79, 40, 0.18);
+      }
+
+      .lightbox button {
+        position: fixed;
+        right: 34px;
+        top: 24px;
+        border: 0;
+        background: transparent;
+        color: var(--purple);
+        font-family: var(--mono);
+        font-size: 44px;
+        cursor: none;
+        text-shadow: 0 0 12px rgba(255, 79, 40, 0.62);
+      }
+
+      @keyframes marquee {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      @keyframes screenBoot {
+        0% {
+          opacity: 0;
+          filter: brightness(2.4) blur(5px);
+          transform: scaleY(0.985);
+        }
+        38% {
+          opacity: 1;
+          filter: brightness(1.65) blur(1px);
+        }
+        100% {
+          opacity: 1;
+          filter: brightness(1) blur(0);
+          transform: scaleY(1);
+        }
+      }
+
+      @keyframes revealUp {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes panelIn {
+        0% {
+          opacity: 0;
+          clip-path: inset(0 100% 0 0);
+        }
+        55% {
+          opacity: 1;
+        }
+        100% {
+          opacity: 1;
+          clip-path: inset(0);
+        }
+      }
+
+      @keyframes stripeLoad {
+        from {
+          opacity: 0;
+          transform: scaleX(0.22);
+          transform-origin: left bottom;
+        }
+        to {
+          opacity: 1;
+          transform: scaleX(1);
+          transform-origin: left bottom;
+        }
+      }
+
+      @keyframes sweepDown {
+        from {
+          transform: translateY(-20vh);
+        }
+        to {
+          transform: translateY(150vh);
+        }
+      }
+
+      @keyframes crtFlicker {
+        0%,
+        100% {
+          opacity: 0.86;
+        }
+        50% {
+          opacity: 0.78;
+        }
+        52% {
+          opacity: 0.9;
+        }
+      }
+
+      @keyframes linePulse {
+        50% {
+          opacity: 0.74;
+          filter: brightness(1.28);
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.8;
+          transform: translate(-50%, -50%) scale(0.42);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.8);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cursor-dot" aria-hidden="true"></div>
+    <main class="page">
+      <header class="topbar">
+        <div class="sound is-on" role="button" tabindex="0" aria-label="Toggle sound">Sound On</div>
+        <div class="ticker">
+          <span>HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio |</span>
+        </div>
+      </header>
+
+      <div class="stripe-row">
+        <div class="stripe"></div>
+        <nav class="project-tabs" aria-label="Project tabs">
+          <span class="is-active" data-project="0">Project One</span>
+          <span data-project="1">Project Two</span>
+          <span data-project="2">Project Three</span>
+          <span data-project="3">Project Four</span>
+        </nav>
+        <div class="close-x">X</div>
+      </div>
+
+      <section class="main">
+        <aside class="intro">
+          <div class="code">002//WO</div>
+          <h1>AIGC<br />作品展示</h1>
+
+          <div class="slide-control" aria-hidden="true">
+            <div class="arrow" data-nav="prev">&#8249;</div>
+            <div class="dots">
+              <i class="is-active" data-dot="0"></i><i data-dot="1"></i><i data-dot="2"></i><i data-dot="3"></i><i data-dot="4"></i><i data-dot="5"></i><i data-dot="6"></i><i data-dot="7"></i><i data-dot="8"></i><i data-dot="9"></i><i data-dot="10"></i><i data-dot="11"></i><i data-dot="12"></i><i data-dot="13"></i><i data-dot="14"></i>
+            </div>
+            <div class="arrow" data-nav="next">&#8250;</div>
+            <div class="control-line"></div>
+          </div>
+        </aside>
+
+        <section class="works-panel">
+          <article class="project-info">
+            <div class="topic-copy">
+              <span class="label">Project Topic</span>
+              <h2>AIGC Visual Design Collection</h2>
+            </div>
+            <article class="meta">
+              <span class="label">Category</span>
+              <p>Brand System<br />UI Visual Design<br />2025</p>
+            </article>
+          </article>
+
+          <section class="gallery">
+            <div class="main-image">
+              <img id="project-image" src="assets/portfolio-works/aigc/01.jpg" alt="AIGC project preview" />
+            </div>
+          </section>
+        </section>
+      </section>
+    </main>
+    <div class="vignette"></div>
+    <div class="scan-sweep"></div>
+    <div class="lightbox" id="lightbox" aria-hidden="true">
+      <button type="button" aria-label="Close image preview">X</button>
+      <img src="assets/portfolio-works/aigc/01.jpg" alt="Large project preview" />
+    </div>
+    <script>
+      (() => {
+        const projects = [
+          {
+            title: "博瀚智能<br />品牌设计升级改造",
+            images: [
+              "assets/projects/bohan/01.jpg",
+              "assets/projects/bohan/02.jpg",
+              "assets/projects/bohan/03.jpg",
+              "assets/projects/bohan/04.jpg",
+              "assets/projects/bohan/05.jpg",
+              "assets/projects/bohan/06.jpg"
+            ],
+            alt: "Bohan Smart brand upgrade preview"
+          },
+          {
+            title: "Apulis AI Studio<br />平台设计系统解决方案",
+            images: [
+              "assets/projects/apulis/01.jpg",
+              "assets/projects/apulis/03.jpg",
+              "assets/projects/apulis/04.jpg",
+              "assets/projects/apulis/05.jpg",
+              "assets/projects/apulis/06.jpg",
+              "assets/projects/apulis/08.jpg"
+            ],
+            alt: "Apulis AI Studio design system preview"
+          },
+          {
+            title: "币小子<br />WEB端设计",
+            images: [
+              "assets/projects/bixiaozi/01.jpg",
+              "assets/projects/bixiaozi/02.jpg",
+              "assets/projects/bixiaozi/03.jpg",
+              "assets/projects/bixiaozi/04.jpg"
+            ],
+            alt: "Bixiaozi web design preview"
+          },
+          {
+            title: "运营设计",
+            images: [
+              "assets/projects/operation/01.jpg",
+              "assets/projects/operation/02.jpg",
+              "assets/projects/operation/03.jpg",
+              "assets/projects/operation/04.jpg",
+              "assets/projects/operation/05.jpg",
+              "assets/projects/operation/06.jpg"
+            ],
+            alt: "Operation visual design preview"
+          }
+        ];
+
+        const makeImages = (folder, count) =>
+          Array.from({ length: count }, (_, index) => `assets/portfolio-works/${folder}/${String(index + 1).padStart(2, "0")}.jpg`);
+
+        projects.splice(
+          0,
+          projects.length,
+          {
+            title: "AIGC<br />作品展示",
+            topic: "AIGC Visual Design Collection",
+            category: "AIGC<br />Visual Design<br />2025",
+            images: makeImages("aigc", 13),
+            alt: "AIGC project preview"
+          },
+          {
+            title: "UI设计<br />作品展示",
+            topic: "UI Design Collection",
+            category: "UI Design<br />Interface Design<br />2025",
+            images: makeImages("ui-design", 15),
+            alt: "UI design project preview"
+          },
+          {
+            title: "VI设计<br />作品展示",
+            topic: "VI Design Collection",
+            category: "VI Design<br />Brand System<br />2025",
+            images: makeImages("vi-design", 14),
+            alt: "VI design project preview"
+          },
+          {
+            title: "运营设计<br />作品展示",
+            topic: "Operation Design Collection",
+            category: "Operation Design<br />Campaign Visual<br />2025",
+            images: makeImages("operation-design", 10),
+            alt: "Operation design project preview"
+          }
+        );
+
+        const title = document.querySelector(".intro h1");
+        const topicTitle = document.querySelector(".topic-copy h2");
+        const categoryText = document.querySelector(".meta p");
+        const tabs = [...document.querySelectorAll(".project-tabs span")];
+        const dots = [...document.querySelectorAll(".dots i")];
+        const imageWrap = document.querySelector(".main-image");
+        const image = document.querySelector("#project-image");
+        const lightbox = document.querySelector("#lightbox");
+        const lightboxImage = lightbox.querySelector("img");
+        const lightboxClose = lightbox.querySelector("button");
+        const soundToggle = document.querySelector(".sound");
+        const targets = document.querySelectorAll(".sound, .stripe, .close-x, .project-tabs span, .arrow, .dots i, .works-panel");
+        const cursorDot = document.querySelector(".cursor-dot");
+        let projectIndex = 0;
+        let imageIndex = 0;
+        let enabled = true;
+        let wheelLocked = false;
+        let ctx;
+
+        const ensureAudio = () => {
+          if (!ctx) {
+            const AudioCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtor) return null;
+            ctx = new AudioCtor();
+          }
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+          return ctx;
+        };
+
+        const tone = (frequency = 680, duration = 0.055, gainValue = 0.2, type = "square") => {
+          if (!enabled) return;
+          const audio = ensureAudio();
+          if (!audio) return;
+          const osc = audio.createOscillator();
+          const gain = audio.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(frequency, audio.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(frequency * 0.72, audio.currentTime + duration);
+          gain.gain.setValueAtTime(0.0001, audio.currentTime);
+          gain.gain.exponentialRampToValueAtTime(gainValue, audio.currentTime + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audio.destination);
+          osc.start();
+          osc.stop(audio.currentTime + duration);
+        };
+
+        const pulse = (event) => {
+          const marker = document.createElement("span");
+          marker.className = "cursor-pulse";
+          marker.style.left = `${event.clientX}px`;
+          marker.style.top = `${event.clientY}px`;
+          document.body.appendChild(marker);
+          marker.addEventListener("animationend", () => marker.remove(), { once: true });
+        };
+
+        const render = () => {
+          const project = projects[projectIndex];
+          imageIndex = ((imageIndex % project.images.length) + project.images.length) % project.images.length;
+          tabs.forEach((tab, index) => tab.classList.toggle("is-active", index === projectIndex));
+          dots.forEach((dot, index) => {
+            dot.classList.toggle("is-active", index === imageIndex);
+            dot.style.visibility = index < project.images.length ? "visible" : "hidden";
+          });
+          title.innerHTML = project.title;
+          topicTitle.textContent = project.topic;
+          categoryText.innerHTML = project.category;
+          imageWrap.classList.add("is-switching");
+          window.setTimeout(() => {
+            image.src = project.images[imageIndex];
+            image.alt = project.alt;
+            lightboxImage.src = image.src;
+            lightboxImage.alt = project.alt;
+            imageWrap.classList.remove("is-switching");
+          }, 130);
+        };
+
+        const moveImage = (direction) => {
+          imageIndex += direction;
+          render();
+          tone(direction > 0 ? 560 : 460, 0.07, 0.18, "sawtooth");
+        };
+
+        document.addEventListener("pointerdown", () => ensureAudio(), { once: true });
+
+        document.addEventListener("pointermove", (event) => {
+          cursorDot.style.left = `${event.clientX}px`;
+          cursorDot.style.top = `${event.clientY}px`;
+          cursorDot.style.opacity = "1";
+        });
+
+        targets.forEach((target) => {
+          target.addEventListener("pointerenter", () => {
+            cursorDot.classList.add("is-hover");
+            tone(940, 0.045, 0.16, "square");
+          });
+          target.addEventListener("pointerleave", () => {
+            cursorDot.classList.remove("is-hover");
+          });
+          target.addEventListener("pointerdown", (event) => {
+            pulse(event);
+            tone(430, 0.09, 0.24, "sawtooth");
+          });
+        });
+
+        tabs.forEach((tab) => {
+          tab.addEventListener("click", () => {
+            projectIndex = Number(tab.dataset.project);
+            imageIndex = 0;
+            render();
+          });
+        });
+
+        document.querySelector("[data-nav='prev']").addEventListener("click", () => {
+          moveImage(-1);
+        });
+
+        document.querySelector("[data-nav='next']").addEventListener("click", () => {
+          moveImage(1);
+        });
+
+        dots.forEach((dot) => {
+          dot.addEventListener("click", () => {
+            imageIndex = Number(dot.dataset.dot);
+            render();
+          });
+        });
+
+        soundToggle.addEventListener("click", () => {
+          enabled = !enabled;
+          soundToggle.classList.toggle("is-on", enabled);
+          soundToggle.textContent = enabled ? "Sound On" : "Sound Off";
+          if (enabled) tone(780, 0.08, 0.22, "square");
+        });
+
+        image.addEventListener("click", (event) => {
+          pulse(event);
+          tone(500, 0.1, 0.22, "sawtooth");
+          lightboxImage.src = image.src;
+          lightboxImage.alt = image.alt;
+          lightbox.classList.add("is-open");
+          lightbox.setAttribute("aria-hidden", "false");
+        });
+
+        const closeLightbox = () => {
+          lightbox.classList.remove("is-open");
+          lightbox.setAttribute("aria-hidden", "true");
+        };
+
+        lightbox.addEventListener("click", (event) => {
+          if (event.target === lightbox || event.target === lightboxImage) {
+            closeLightbox();
+          }
+        });
+
+        lightbox.addEventListener(
+          "wheel",
+          (event) => {
+            if (!lightbox.classList.contains("is-open")) return;
+            event.preventDefault();
+            if (wheelLocked) return;
+            wheelLocked = true;
+            moveImage(event.deltaY > 0 ? 1 : -1);
+            window.setTimeout(() => {
+              wheelLocked = false;
+            }, 180);
+          },
+          { passive: false }
+        );
+
+        lightboxClose.addEventListener("click", closeLightbox);
+
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape") {
+            closeLightbox();
+          }
+        });
+
+        document.querySelector(".close-x").addEventListener("click", () => {
+          sessionStorage.setItem("portfolioReturnDirectory", "1");
+          window.location.replace("index.html#directory");
+        });
+
+        render();
+      })();
+    </script>
+  </body>
+</html>

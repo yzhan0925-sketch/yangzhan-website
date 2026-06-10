@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yang Zhan Portfolio</title>
+    <script>
+      if (window.location.hash === "#directory" && sessionStorage.getItem("portfolioReturnDirectory") === "1") {
+        document.documentElement.classList.add("boot-directory");
+      }
+    </script>
+    <style>
+      :root {
+        --bg: #111917;
+        --cyan: #57dfff;
+        --blue: #4878ff;
+        --works-orange: #ff4f28;
+        --contact-yellow: #f5b32c;
+        --line: rgba(87, 223, 255, 0.46);
+        --profile-line: rgba(72, 120, 255, 0.58);
+        --text: #efffff;
+        --muted: rgba(239, 255, 255, 0.72);
+        --mono: "OCR A Extended", "Lucida Console", Consolas, "Courier New", monospace;
+        --serif: Didot, "Bodoni 72", "Bodoni MT", "Times New Roman", serif;
+        --sans: "Helvetica Neue", Arial, sans-serif;
+        --design-width: 1920px;
+        --design-height: 1080px;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        overflow: hidden;
+        background: var(--bg);
+        color: var(--text);
+        cursor: none;
+      }
+
+      body {
+        font-family: var(--mono);
+      }
+
+      body::before,
+      body::after {
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      body::before {
+        background:
+          radial-gradient(circle at 23% 44%, rgba(92, 62, 128, 0.3), transparent 42%),
+          radial-gradient(circle at 78% 47%, rgba(30, 108, 108, 0.18), transparent 38%),
+          linear-gradient(90deg, rgba(0, 0, 0, 0.35), transparent 12% 88%, rgba(0, 0, 0, 0.35)),
+          #111917;
+      }
+
+      body::after {
+        opacity: 0.86;
+        mix-blend-mode: screen;
+        background:
+          repeating-linear-gradient(90deg, rgba(255, 0, 0, 0.14) 0 1px, rgba(0, 255, 120, 0.08) 1px 2px, rgba(0, 90, 255, 0.14) 2px 3px, transparent 3px 5px),
+          repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.052) 0 1px, transparent 1px 4px);
+        animation: crtFlicker 4.8s steps(6) infinite;
+      }
+
+      button {
+        font: inherit;
+        cursor: none;
+      }
+
+      .grain,
+      .vignette,
+      .depth-sweep,
+      .scan-sweep {
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .grain {
+        z-index: 5;
+        opacity: 0.18;
+        background-image:
+          radial-gradient(circle, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.6px),
+          radial-gradient(circle, rgba(0, 0, 0, 0.6) 0 1px, transparent 1.5px);
+        background-position: 0 0, 3px 3px;
+        background-size: 7px 7px;
+      }
+
+      .vignette {
+        z-index: 6;
+        background: radial-gradient(circle at 50% 50%, transparent 0 55%, rgba(0, 0, 0, 0.48) 100%);
+      }
+
+      .cursor-dot {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 30;
+        width: 9px;
+        height: 9px;
+        border-radius: 50%;
+        background: var(--cyan);
+        box-shadow: 0 0 10px rgba(87, 223, 255, 0.78);
+        pointer-events: none;
+        opacity: 0;
+        transform: translate(-50%, -50%);
+        transition:
+          width 150ms ease,
+          height 150ms ease,
+          background 150ms ease,
+          box-shadow 150ms ease,
+          opacity 150ms ease;
+      }
+
+      .cursor-dot.is-hover {
+        width: 12px;
+        height: 12px;
+      }
+
+      .depth-sweep,
+      .scan-sweep {
+        z-index: 4;
+        opacity: 0.48;
+        mix-blend-mode: screen;
+        background: linear-gradient(
+          180deg,
+          transparent 0%,
+          rgba(91, 143, 219, 0.04) 24%,
+          rgba(91, 143, 219, 0.18) 52%,
+          rgba(102, 230, 255, 0.08) 72%,
+          transparent 100%
+        );
+        height: 38vh;
+        inset: -40vh 0 auto;
+        animation: sweepDown 3.8s linear infinite;
+      }
+
+      .screen {
+        position: fixed;
+        left: calc((100vw - min(100vw, var(--design-width))) / 2);
+        top: calc((100vh - min(100vh, var(--design-height))) / 2);
+        width: min(100vw, var(--design-width));
+        height: min(100vh, var(--design-height));
+        z-index: 1;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        transition:
+          opacity 420ms ease,
+          visibility 420ms ease;
+      }
+
+      .screen.is-active {
+        z-index: 2;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+      }
+
+      .instant-nav .screen {
+        transition-duration: 1ms;
+      }
+
+      .instant-nav .directory-page,
+      .instant-nav .profile-page {
+        animation-duration: 1ms !important;
+      }
+
+      .boot-directory .home-screen.is-active {
+        z-index: 1;
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+      }
+
+      .boot-directory .directory-page {
+        z-index: 2;
+        opacity: 1;
+        visibility: visible;
+        pointer-events: auto;
+        animation-duration: 1ms !important;
+      }
+
+      .directory-ready .directory-page {
+        animation: none !important;
+        transition-duration: 1ms !important;
+      }
+
+      .home-screen {
+        display: grid;
+        place-items: center;
+        isolation: isolate;
+      }
+
+      .loading-stack {
+        position: absolute;
+        left: 48.3%;
+        top: 50%;
+        z-index: 2;
+        display: grid;
+        justify-items: center;
+        width: min(1080px, 94vw);
+        transform: translate(-50%, -50%);
+      }
+
+      .hero-copy {
+        display: grid;
+        justify-items: center;
+        width: 100%;
+        min-height: 242px;
+        align-content: center;
+      }
+
+      .kicker {
+        margin: 0 0 26px;
+        color: var(--cyan);
+        font-size: clamp(18px, 1.65vw, 28px);
+        font-weight: 700;
+        letter-spacing: 0.22em;
+        line-height: 1;
+        text-transform: uppercase;
+        text-shadow: 0 0 12px rgba(93, 231, 255, 0.72);
+        opacity: 0;
+        animation: lineReveal 520ms steps(5, end) 180ms forwards, textFlicker 2.2s linear 740ms infinite;
+      }
+
+      .portfolio {
+        margin: 0;
+        color: #ecf7f4;
+        font-family: "Arial Black", Impact, var(--mono);
+        font-size: clamp(82px, 12.6vw, 212px);
+        font-weight: 900;
+        letter-spacing: 0;
+        line-height: 0.94;
+        text-align: center;
+        text-transform: uppercase;
+        text-shadow:
+          0 0 16px rgba(255, 255, 255, 0.26),
+          2px 0 0 rgba(255, 58, 80, 0.18),
+          -2px 0 0 rgba(35, 216, 255, 0.2);
+        opacity: 0;
+        filter: blur(5px);
+        animation: titleBoot 760ms cubic-bezier(0.19, 1, 0.22, 1) 480ms forwards, titleGlitch 3.8s steps(2, end) 1.45s infinite;
+      }
+
+      .portfolio span {
+        display: block;
+        margin-top: 11px;
+      }
+
+      .progress-shell {
+        width: clamp(320px, 41vw, 470px);
+        height: clamp(28px, 2.8vw, 32px);
+        margin-top: 24px;
+        padding: 5px 6px;
+        border: 1px solid rgba(93, 231, 255, 0.45);
+        background: rgba(0, 0, 0, 0.08);
+        opacity: 0;
+        animation: lineReveal 380ms steps(4, end) 1.05s forwards;
+      }
+
+      .progress-fill {
+        width: 0;
+        height: 100%;
+        background: linear-gradient(90deg, #f5a33c 0%, #ff8444 24%, #ee5b80 47%, #c563df 70%, #76daf4 100%);
+        box-shadow: 0 0 12px rgba(123, 217, 255, 0.22);
+        animation: loadFill 3.1s cubic-bezier(0.19, 1, 0.22, 1) 1.18s forwards, barPulse 1.1s ease-in-out 4.35s infinite;
+      }
+
+      .loading-text {
+        margin: 18px 0 0;
+        color: #fff;
+        font-family: var(--mono);
+        font-size: clamp(15px, 1.12vw, 21px);
+        font-weight: 700;
+        letter-spacing: 0.14em;
+        line-height: 1;
+        text-transform: uppercase;
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.52);
+        opacity: 0;
+        animation: lineReveal 420ms steps(4, end) 1.24s forwards, loadingBlink 1.1s steps(2, end) 1.72s infinite;
+      }
+
+      .directory-page {
+        padding: clamp(28px, 4.7vw, 52px) clamp(40px, 4.7vw, 58px);
+        animation: pageBoot 620ms steps(6, end) both;
+      }
+
+      .dir-topbar {
+        display: grid;
+        grid-template-columns: 230px minmax(0, 1fr) minmax(780px, 0.62fr);
+        grid-template-rows: auto 1px;
+        align-items: start;
+        row-gap: 8px;
+      }
+
+      .sound,
+      .profile-sound {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        width: max-content;
+        color: var(--cyan);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        user-select: none;
+        transition:
+          color 160ms ease,
+          text-shadow 160ms ease,
+          transform 160ms ease;
+      }
+
+      .sound::after,
+      .profile-sound::after {
+        content: "";
+        width: 8px;
+        height: 8px;
+        background: var(--cyan);
+        box-shadow: 0 0 12px var(--cyan);
+      }
+
+      .sound:hover,
+      .sound.is-on,
+      .profile-sound:hover,
+      .profile-sound.is-on {
+        color: #9af2ff;
+        text-shadow: 0 0 11px rgba(102, 230, 255, 0.84);
+        transform: translateX(2px);
+      }
+
+      .profile-page .profile-sound {
+        color: var(--blue);
+      }
+
+      .profile-page .profile-sound::after {
+        background: var(--blue);
+        box-shadow: 0 0 12px var(--blue);
+      }
+
+      .profile-page .profile-sound:hover,
+      .profile-page .profile-sound.is-on {
+        color: #79a1ff;
+        text-shadow: 0 0 11px rgba(72, 120, 255, 0.86);
+      }
+
+      .top-line {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        height: 1px;
+        background: var(--line);
+        transform-origin: left center;
+        animation: lineDraw 900ms cubic-bezier(0.19, 1, 0.22, 1) 180ms both;
+      }
+
+      .ticker {
+        grid-column: 3;
+        grid-row: 1;
+        overflow: hidden;
+        height: 28px;
+        padding-left: 20px;
+        color: var(--cyan);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        white-space: nowrap;
+      }
+
+      .ticker span {
+        display: inline-block;
+        min-width: 200%;
+        animation: marquee 24s linear infinite;
+      }
+
+      .directory {
+        width: min(960px, 58vw);
+        margin: clamp(64px, 7vh, 76px) auto 0;
+      }
+
+      .section-top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 42px;
+        border-bottom: 1px solid var(--line);
+        color: var(--cyan);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+
+      .cards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 26px;
+        margin-top: 26px;
+      }
+
+      .card {
+        --accent: var(--blue);
+        position: relative;
+        height: clamp(350px, 48vh, 462px);
+        padding: 28px;
+        border: 1px solid rgba(87, 223, 255, 0.18);
+        background:
+          linear-gradient(180deg, rgba(87, 223, 255, 0.06), rgba(87, 223, 255, 0.02)),
+          rgba(36, 99, 105, 0.22);
+        cursor: none;
+        overflow: hidden;
+        transform: translateY(18px);
+        opacity: 0;
+        animation: cardBoot 700ms cubic-bezier(0.19, 1, 0.22, 1) both;
+        transition:
+          transform 260ms ease,
+          border-color 260ms ease,
+          box-shadow 260ms ease,
+          background 260ms ease,
+          filter 260ms ease;
+      }
+
+      .card:nth-child(1) {
+        --accent: #4878ff;
+        animation-delay: 280ms;
+      }
+
+      .card:nth-child(2) {
+        --accent: var(--works-orange);
+        animation-delay: 390ms;
+      }
+
+      .card:nth-child(3) {
+        --accent: var(--contact-yellow);
+        animation-delay: 500ms;
+      }
+
+      .card::before,
+      .card::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        opacity: 0;
+      }
+
+      .card::before {
+        opacity: 1;
+        background:
+          radial-gradient(circle at 50% 45%, rgba(0, 156, 164, 0.55) 0 7px, transparent 8px),
+          repeating-radial-gradient(ellipse at 34% 28%, rgba(255, 255, 255, 0.16) 0 1px, transparent 1px 16px),
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0 1px, transparent 1px 8px),
+          linear-gradient(180deg, color-mix(in srgb, var(--accent) 94%, #ffffff 5%), color-mix(in srgb, var(--accent) 82%, #0f1917 12%));
+        transform: translateY(108%);
+        transition: transform 360ms cubic-bezier(0.19, 1, 0.22, 1);
+      }
+
+      .card::after {
+        width: 38%;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+        transform: translateX(-120%) skewX(-12deg);
+      }
+
+      .card:hover,
+      .card.is-hover {
+        transform: translateY(-4px);
+        border-color: color-mix(in srgb, var(--accent) 70%, var(--cyan));
+        box-shadow:
+          0 0 24px color-mix(in srgb, var(--accent) 30%, transparent),
+          inset 0 0 22px color-mix(in srgb, var(--accent) 14%, transparent);
+        filter: brightness(1.12);
+      }
+
+      .card:hover::before,
+      .card.is-hover::before {
+        transform: translateY(0);
+      }
+
+      .card:hover::after,
+      .card.is-hover::after {
+        opacity: 1;
+        animation: hoverSweep 680ms cubic-bezier(0.19, 1, 0.22, 1);
+      }
+
+      .card code {
+        position: relative;
+        z-index: 1;
+        color: var(--cyan);
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: 0.14em;
+      }
+
+      .card h2 {
+        position: absolute;
+        left: 28px;
+        right: 24px;
+        bottom: 50px;
+        margin: 0;
+        color: rgba(233, 255, 251, 0.9);
+        font-family: var(--serif);
+        font-size: clamp(24px, 1.85vw, 32px);
+        font-weight: 300;
+        line-height: 1.18;
+        letter-spacing: 0;
+        z-index: 1;
+        transition:
+          color 220ms ease,
+          transform 220ms ease,
+          text-shadow 220ms ease;
+      }
+
+      .card:hover h2,
+      .card.is-hover h2 {
+        color: #fff;
+        transform: translateX(8px);
+        text-shadow: 0 0 14px color-mix(in srgb, var(--accent) 38%, transparent);
+      }
+
+      .card i {
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 18px;
+        height: 2px;
+        background: var(--accent);
+        box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 50%, transparent);
+        animation: fileLinePulse 2.4s ease-in-out infinite;
+      }
+
+      .cta {
+        display: grid;
+        place-items: center;
+        width: 278px;
+        height: 68px;
+        margin: 64px auto 0;
+        border: 1px solid var(--line);
+        color: var(--cyan);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        background: rgba(0, 0, 0, 0.08);
+        cursor: none;
+        transition:
+          background 180ms ease,
+          color 180ms ease,
+          box-shadow 180ms ease;
+      }
+
+      .cta:hover {
+        color: #081514;
+        background: var(--cyan);
+        box-shadow: 0 0 18px rgba(87, 223, 255, 0.34);
+      }
+
+      .profile-page {
+        padding: 34px 22px 0;
+        animation: screenBoot 720ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+      }
+
+      .profile-topbar {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        align-items: start;
+        min-height: 74px;
+        border-bottom: 1px solid rgba(72, 120, 255, 0.48);
+      }
+
+      .profile-ticker {
+        justify-self: end;
+        overflow: hidden;
+        width: min(930px, 64vw);
+        color: var(--blue);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.16em;
+        white-space: nowrap;
+      }
+
+      .profile-ticker span {
+        display: inline-block;
+        min-width: 200%;
+        animation: marquee 22s linear infinite;
+      }
+
+      .stripe-row {
+        position: relative;
+        height: 88px;
+        border-bottom: 2px solid var(--profile-line);
+      }
+
+      .stripe {
+        position: absolute;
+        left: 0;
+        bottom: -1px;
+        width: 270px;
+        height: 48px;
+        background:
+          linear-gradient(55deg, transparent 0 116px, #111917 117px 129px, transparent 130px 193px, #111917 194px 206px, transparent 207px),
+          repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.11) 0 1px, transparent 1px 8px),
+          linear-gradient(90deg, #4878ff 0%, #5d90ff 100%);
+        clip-path: polygon(0 0, 84% 0, 100% 100%, 0 100%);
+        animation: stripeLoad 920ms cubic-bezier(0.18, 0.88, 0.24, 1) both;
+        transition:
+          filter 160ms ease,
+          transform 160ms ease;
+      }
+
+      .stripe:hover {
+        filter: brightness(1.25) saturate(1.2);
+        transform: translateX(4px);
+      }
+
+      .close-x {
+        position: absolute;
+        right: 12px;
+        bottom: 18px;
+        color: var(--blue);
+        font-size: 40px;
+        line-height: 1;
+        user-select: none;
+        cursor: none;
+        transition:
+          color 150ms ease,
+          text-shadow 150ms ease,
+          transform 150ms ease;
+      }
+
+      .close-x:hover {
+        color: var(--cyan);
+        text-shadow: 0 0 12px rgba(102, 230, 255, 0.9);
+        transform: scale(1.06);
+      }
+
+      .profile-main {
+        display: grid;
+        grid-template-columns: minmax(560px, 650px) minmax(780px, 1fr);
+        gap: 58px;
+        height: calc(100vh - 196px);
+        padding-top: 20px;
+      }
+
+      .intro {
+        padding-left: 18px;
+        animation: revealUp 780ms 160ms ease both;
+      }
+
+      .code {
+        color: var(--blue);
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+      }
+
+      .intro h1 {
+        margin: 36px 0 24px;
+        font-family: var(--serif);
+        font-size: clamp(78px, 5.4vw, 104px);
+        font-weight: 300;
+        line-height: 0.88;
+        letter-spacing: 0;
+      }
+
+      .intro p {
+        width: min(600px, 92%);
+        margin: 0;
+        color: var(--muted);
+        font-family: var(--sans);
+        font-size: clamp(22px, 1.45vw, 27px);
+        line-height: 1.28;
+        text-align: justify;
+        text-align-last: left;
+        hyphens: auto;
+      }
+
+      .profile-panel {
+        align-self: start;
+        display: grid;
+        grid-template-columns: 230px minmax(390px, 0.92fr) minmax(470px, 1.08fr);
+        grid-template-rows: 130px 135px 333px;
+        width: 100%;
+        height: 598px;
+        margin-left: auto;
+        border: 1px solid var(--profile-line);
+        border-left: 10px solid var(--blue);
+        background: rgba(15, 29, 35, 0.2);
+        animation: panelIn 820ms 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+        transition:
+          border-color 160ms ease,
+          box-shadow 160ms ease;
+      }
+
+      .profile-panel:hover {
+        border-color: rgba(102, 230, 255, 0.72);
+        box-shadow: 0 0 28px rgba(91, 143, 219, 0.16);
+      }
+
+      .cell {
+        min-width: 0;
+        min-height: 0;
+        padding: 28px 34px;
+        border-right: 1px solid rgba(91, 143, 219, 0.34);
+        border-bottom: 1px solid rgba(91, 143, 219, 0.34);
+        transition:
+          background 150ms ease,
+          border-color 150ms ease;
+      }
+
+      .cell:hover {
+        background: rgba(91, 143, 219, 0.075);
+        border-color: rgba(102, 230, 255, 0.6);
+      }
+
+      .photo-cell {
+        grid-column: 1;
+        grid-row: 1 / 3;
+        padding: 24px 40px 28px;
+      }
+
+      .education {
+        grid-column: 2 / 4;
+        grid-row: 1;
+        padding-left: 58px;
+      }
+
+      .post {
+        grid-column: 2 / 4;
+        grid-row: 2;
+        padding-left: 58px;
+      }
+
+      .skills {
+        grid-column: 1 / 3;
+        grid-row: 3;
+        border-bottom: 0;
+        padding-top: 24px;
+        padding-right: 42px;
+      }
+
+      .experience {
+        grid-column: 3;
+        grid-row: 3;
+        border-right: 0;
+        border-bottom: 0;
+        padding-top: 24px;
+      }
+
+      .label {
+        display: block;
+        margin-bottom: 24px;
+        color: var(--blue);
+        font-family: var(--sans);
+        font-size: 20px;
+        font-weight: 400;
+        text-transform: uppercase;
+      }
+
+      .photo {
+        display: block;
+        width: 152px;
+        height: 202px;
+        object-fit: cover;
+        object-position: center top;
+        background: #fff;
+        transition:
+          filter 160ms ease,
+          transform 160ms ease;
+      }
+
+      .photo-cell:hover .photo {
+        filter: contrast(1.08) saturate(1.08);
+        transform: translateY(-2px);
+      }
+
+      .education h2 {
+        margin: 0;
+        font-family: var(--sans);
+        font-size: 22px;
+        font-weight: 400;
+        line-height: 1.2;
+      }
+
+      .post p,
+      .skills p,
+      .experience p {
+        margin: 0;
+        color: var(--text);
+        font-family: var(--sans);
+        font-size: 20px;
+        font-weight: 400;
+        line-height: 1.28;
+      }
+
+      .skills p {
+        max-width: 650px;
+        font-size: 17px;
+        line-height: 1.48;
+      }
+
+      .experience p {
+        font-size: 17px;
+        line-height: 1.42;
+      }
+
+      .cursor-pulse {
+        position: fixed;
+        z-index: 10;
+        width: 34px;
+        height: 34px;
+        pointer-events: none;
+        border: 1px solid rgba(102, 230, 255, 0.74);
+        border-radius: 50%;
+        transform: translate(-50%, -50%) scale(0.4);
+        opacity: 0;
+        animation: pulse 520ms ease-out forwards;
+      }
+
+      @keyframes marquee {
+        to {
+          transform: translateX(-50%);
+        }
+      }
+
+      @keyframes crtFlicker {
+        0%,
+        100% {
+          opacity: 0.86;
+        }
+        50% {
+          opacity: 0.78;
+        }
+        52% {
+          opacity: 0.9;
+        }
+      }
+
+      @keyframes sweepDown {
+        from {
+          transform: translateY(-20vh);
+        }
+        to {
+          transform: translateY(150vh);
+        }
+      }
+
+      @keyframes lineReveal {
+        0% {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        100% {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes titleBoot {
+        0% {
+          opacity: 0;
+          filter: blur(8px) brightness(2);
+          transform: scaleX(0.92);
+        }
+        44% {
+          opacity: 1;
+          filter: blur(1px) brightness(1.7);
+          transform: scaleX(1.025);
+        }
+        100% {
+          opacity: 1;
+          filter: blur(0) brightness(1);
+          transform: scaleX(1);
+        }
+      }
+
+      @keyframes titleGlitch {
+        0%,
+        88%,
+        100% {
+          transform: translateX(0);
+        }
+        90% {
+          transform: translateX(-2px);
+        }
+        92% {
+          transform: translateX(3px);
+        }
+      }
+
+      @keyframes loadFill {
+        0% {
+          width: 0;
+          filter: brightness(1.4);
+        }
+        42% {
+          width: 36%;
+        }
+        74% {
+          width: 77%;
+        }
+        100% {
+          width: 91%;
+          filter: brightness(1);
+        }
+      }
+
+      @keyframes barPulse {
+        50% {
+          filter: brightness(1.16);
+        }
+      }
+
+      @keyframes textFlicker {
+        0%,
+        94%,
+        100% {
+          opacity: 1;
+        }
+        96% {
+          opacity: 0.62;
+        }
+      }
+
+      @keyframes loadingBlink {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.52;
+        }
+      }
+
+      @keyframes pageBoot {
+        0% {
+          opacity: 0;
+          filter: brightness(1.8) blur(2px);
+        }
+        100% {
+          opacity: 1;
+          filter: brightness(1) blur(0);
+        }
+      }
+
+      @keyframes lineDraw {
+        from {
+          transform: scaleX(0);
+          opacity: 0.35;
+        }
+        to {
+          transform: scaleX(1);
+          opacity: 1;
+        }
+      }
+
+      @keyframes cardBoot {
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes hoverSweep {
+        from {
+          transform: translateX(-120%) skewX(-12deg);
+        }
+        to {
+          transform: translateX(310%) skewX(-12deg);
+        }
+      }
+
+      @keyframes fileLinePulse {
+        50% {
+          opacity: 0.72;
+          filter: brightness(1.35);
+        }
+      }
+
+      @keyframes screenBoot {
+        0% {
+          opacity: 0;
+          filter: brightness(2.4) blur(5px);
+          transform: scaleY(0.985);
+        }
+        100% {
+          opacity: 1;
+          filter: brightness(1) blur(0);
+          transform: scaleY(1);
+        }
+      }
+
+      @keyframes revealUp {
+        from {
+          opacity: 0;
+          transform: translateY(18px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      @keyframes panelIn {
+        0% {
+          opacity: 0;
+          clip-path: inset(0 100% 0 0);
+        }
+        100% {
+          opacity: 1;
+          clip-path: inset(0);
+        }
+      }
+
+      @keyframes stripeLoad {
+        from {
+          opacity: 0;
+          transform: scaleX(0.22);
+          transform-origin: left bottom;
+        }
+        to {
+          opacity: 1;
+          transform: scaleX(1);
+          transform-origin: left bottom;
+        }
+      }
+
+      @keyframes tickerGlitch {
+        0%,
+        89%,
+        100% {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        90% {
+          transform: translateX(2px);
+          opacity: 0.82;
+        }
+        91% {
+          transform: translateX(-1px);
+          opacity: 1;
+        }
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 0.8;
+          transform: translate(-50%, -50%) scale(0.42);
+        }
+        100% {
+          opacity: 0;
+          transform: translate(-50%, -50%) scale(1.8);
+        }
+      }
+
+      @media (max-width: 1200px) {
+        .directory {
+          width: min(900px, 82vw);
+        }
+
+        .profile-main {
+          grid-template-columns: 1fr;
+          gap: 24px;
+          overflow: auto;
+          height: calc(100vh - 196px);
+          padding-right: 12px;
+        }
+
+        .profile-panel {
+          width: min(100%, 1120px);
+        }
+      }
+
+      @media (max-width: 900px) {
+        .directory-page {
+          padding: 24px;
+        }
+
+        .dir-topbar {
+          grid-template-columns: 170px minmax(0, 1fr) minmax(420px, 0.46fr);
+        }
+
+        .cards {
+          gap: 14px;
+        }
+
+        .portfolio {
+          font-size: clamp(58px, 13.4vw, 104px);
+        }
+
+        .progress-shell {
+          width: min(420px, 72vw);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="cursor-dot" aria-hidden="true"></div>
+    <div class="grain"></div>
+    <div class="depth-sweep"></div>
+    <div class="scan-sweep"></div>
+
+    <main class="screen home-screen is-active" data-screen="home" aria-label="Portfolio loading">
+      <section class="loading-stack">
+        <div class="hero-copy">
+          <p class="kicker">Welcome to my</p>
+          <h1 class="portfolio"><span>portfolio</span></h1>
+        </div>
+        <div class="progress-shell" aria-hidden="true">
+          <div class="progress-fill"></div>
+        </div>
+        <p class="loading-text">Loading......</p>
+      </section>
+    </main>
+
+    <main class="screen directory-page" data-screen="directory" aria-label="Portfolio directory">
+      <header class="dir-topbar">
+        <div class="sound is-on" role="button" tabindex="0" aria-label="Toggle sound">Sound On</div>
+        <div class="top-line" aria-hidden="true"></div>
+        <div class="ticker">
+          <span>HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio |</span>
+        </div>
+      </header>
+
+      <section class="directory" aria-label="Directory">
+        <div class="section-top">
+          <div>Access Files</div>
+          <div>Visit Portfolio -></div>
+        </div>
+
+        <div class="cards">
+          <article class="card" data-go="profile" data-instant="true">
+            <code>001//PR</code>
+            <h2>Profile</h2>
+            <i></i>
+          </article>
+          <article class="card" data-href="works-preview.html">
+            <code>002//WO</code>
+            <h2>Works</h2>
+            <i></i>
+          </article>
+          <article class="card" data-href="contact-preview.html">
+            <code>003//CO</code>
+            <h2>Contact</h2>
+            <i></i>
+          </article>
+        </div>
+
+        <button class="cta" type="button" data-go="profile" data-instant="true">Let's Go</button>
+      </section>
+    </main>
+
+    <main class="screen profile-page" data-screen="profile" aria-label="Profile">
+      <header class="profile-topbar">
+        <div class="profile-sound is-on" role="button" tabindex="0" aria-label="Toggle sound">Sound On</div>
+        <div class="profile-ticker">
+          <span>HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio | HELLO！Welcome to my portfolio |</span>
+        </div>
+      </header>
+
+      <div class="stripe-row">
+        <div class="stripe"></div>
+        <div class="close-x" data-go="directory" data-instant="true">X</div>
+      </div>
+
+      <section class="profile-main">
+        <aside class="intro">
+          <div class="code">001//PR</div>
+          <h1>I'M<br />YANGZHAN</h1>
+          <p>
+            As a designer, I am passionate about creation and strive for the perfect blend of beauty and functionality. In my
+            design philosophy, every piece carries a unique meaning--reflecting insights and distillations of life itself. I
+            firmly believe that design is not only an expression of art but also a tool for solving real-world problems.
+          </p>
+        </aside>
+
+        <section class="profile-panel">
+          <article class="cell photo-cell">
+            <img class="photo" src="assets/yang-zhan.jpg" alt="Yang Zhan portrait" />
+          </article>
+
+          <article class="cell education">
+            <span class="label">Education</span>
+            <h2>Master's Degree</h2>
+          </article>
+
+          <article class="cell post">
+            <span class="label">Post</span>
+            <p>Brand Designer / Visual Designer</p>
+          </article>
+
+          <article class="cell skills">
+            <span class="label">Skills</span>
+            <p>
+              Brand refresh | VI systems and brand manuals | Logo and application guidelines | Typography, color and layout systems |
+              Website and social media brand touchpoint alignment | Exhibition and event material systems | Information hierarchy and
+              visual standard documentation
+            </p>
+          </article>
+
+          <article class="cell experience">
+            <span class="label">Experience</span>
+            <p>
+              2019.05-09<br />
+              Ctrip International Travel Business Design Assistant<br />
+              2020.06-08<br />
+              Transsion Holdings Marketing Design Assistant<br />
+              2020.11-21.09<br />
+              Jiafuyi Intelligent Info Graphic Designer, Operations<br />
+              2021.10-24.11<br />
+              Bodao Smart Shenzhen Graphic Designer, Brand
+            </p>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <div class="vignette"></div>
+
+    <script>
+      (() => {
+        const screens = [...document.querySelectorAll(".screen")];
+        const soundButtons = [...document.querySelectorAll(".sound, .profile-sound")];
+        const interactive = [...document.querySelectorAll(".sound, .profile-sound, .stripe, .close-x, .cell, .card, .cta")];
+        const cursorDot = document.querySelector(".cursor-dot");
+        let enabled = true;
+        let ctx;
+        let homeTimer = window.setTimeout(() => show("directory", { keepDirectoryHash: true }), 4700);
+
+        function show(name, options = {}) {
+          screens.forEach((screen) => screen.classList.toggle("is-active", screen.dataset.screen === name));
+          if (options.keepDirectoryHash && name === "directory" && window.location.hash !== "#directory") {
+            history.replaceState(null, "", "#directory");
+          } else if (name !== "directory" && window.location.hash === "#directory") {
+            history.replaceState(null, "", window.location.pathname + window.location.search);
+          }
+        }
+
+        const shouldReturnDirectory = window.location.hash === "#directory" && sessionStorage.getItem("portfolioReturnDirectory") === "1";
+        if (shouldReturnDirectory) {
+          sessionStorage.removeItem("portfolioReturnDirectory");
+          window.clearTimeout(homeTimer);
+          show("directory", { keepDirectoryHash: true });
+        } else if (window.location.hash === "#directory") {
+          history.replaceState(null, "", window.location.pathname + window.location.search);
+        }
+        if (document.documentElement.classList.contains("boot-directory")) {
+          document.documentElement.classList.add("directory-ready");
+          requestAnimationFrame(() => document.documentElement.classList.remove("boot-directory"));
+        }
+
+        function ensureAudio() {
+          if (!ctx) {
+            const AudioCtor = window.AudioContext || window.webkitAudioContext;
+            if (!AudioCtor) return null;
+            ctx = new AudioCtor();
+          }
+          if (ctx.state === "suspended") {
+            ctx.resume();
+          }
+          return ctx;
+        }
+
+        function tone(frequency = 680, duration = 0.055, gainValue = 0.2, type = "square") {
+          if (!enabled) return;
+          const audio = ensureAudio();
+          if (!audio) return;
+          const osc = audio.createOscillator();
+          const gain = audio.createGain();
+          osc.type = type;
+          osc.frequency.setValueAtTime(frequency, audio.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(frequency * 0.72, audio.currentTime + duration);
+          gain.gain.setValueAtTime(0.0001, audio.currentTime);
+          gain.gain.exponentialRampToValueAtTime(gainValue, audio.currentTime + 0.008);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audio.currentTime + duration);
+          osc.connect(gain);
+          gain.connect(audio.destination);
+          osc.start();
+          osc.stop(audio.currentTime + duration);
+        }
+
+        function pulse(event) {
+          const marker = document.createElement("span");
+          marker.className = "cursor-pulse";
+          marker.style.left = `${event.clientX}px`;
+          marker.style.top = `${event.clientY}px`;
+          document.body.appendChild(marker);
+          marker.addEventListener("animationend", () => marker.remove(), { once: true });
+        }
+
+        function syncSoundLabel() {
+          soundButtons.forEach((button) => {
+            button.classList.toggle("is-on", enabled);
+            button.textContent = enabled ? "Sound On" : "Sound Off";
+          });
+        }
+
+        document.addEventListener("pointerdown", () => ensureAudio(), { once: true });
+
+        document.addEventListener("pointermove", (event) => {
+          cursorDot.style.left = `${event.clientX}px`;
+          cursorDot.style.top = `${event.clientY}px`;
+          cursorDot.style.opacity = "1";
+        });
+
+        document.querySelector(".home-screen").addEventListener("click", () => {
+          window.clearTimeout(homeTimer);
+          tone(420, 0.09, 0.22, "sawtooth");
+          show("directory", { keepDirectoryHash: true });
+        });
+
+        document.querySelectorAll("[data-go]").forEach((element) => {
+          element.addEventListener("click", (event) => {
+            const target = element.dataset.go;
+            if (!target) return;
+            pulse(event);
+            tone(420, 0.09, 0.24, "sawtooth");
+            if (element.dataset.instant) {
+              document.body.classList.add("instant-nav");
+            }
+            show(target, { keepDirectoryHash: target === "directory" });
+            if (element.dataset.instant) {
+              requestAnimationFrame(() => document.body.classList.remove("instant-nav"));
+            }
+          });
+        });
+
+        document.querySelectorAll("[data-href]").forEach((element) => {
+          element.addEventListener("click", (event) => {
+            pulse(event);
+            tone(420, 0.09, 0.24, "sawtooth");
+            window.setTimeout(() => {
+              window.location.href = element.dataset.href;
+            }, 120);
+          });
+        });
+
+        soundButtons.forEach((button) => {
+          button.addEventListener("click", () => {
+            enabled = !enabled;
+            syncSoundLabel();
+            if (enabled) tone(780, 0.08, 0.22, "square");
+          });
+        });
+
+        interactive.forEach((target) => {
+          target.addEventListener("pointerenter", () => {
+            cursorDot.classList.add("is-hover");
+            const accent = getComputedStyle(target).getPropertyValue("--accent").trim();
+            if (accent) {
+              cursorDot.style.background = accent;
+              cursorDot.style.boxShadow = `0 0 12px ${accent}`;
+            }
+            tone(920, 0.045, 0.17, "square");
+          });
+          target.addEventListener("pointerleave", () => {
+            cursorDot.classList.remove("is-hover");
+            cursorDot.style.background = "";
+            cursorDot.style.boxShadow = "";
+          });
+          target.addEventListener("pointerdown", (event) => {
+            pulse(event);
+            tone(420, 0.09, 0.24, "sawtooth");
+          });
+        });
+
+        document.querySelectorAll(".card").forEach((card) => {
+          card.addEventListener("pointermove", (event) => {
+            const rect = card.getBoundingClientRect();
+            card.style.setProperty("--mx", `${((event.clientX - rect.left) / rect.width) * 100}%`);
+            card.style.setProperty("--my", `${((event.clientY - rect.top) / rect.height) * 100}%`);
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

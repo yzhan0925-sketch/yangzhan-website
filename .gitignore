@@ -1,0 +1,7 @@
+backup-confirmed-*/
+.edge-shot-profile/
+server.err.log
+server.out.log
+*.log
+*-static.png
+profile-preview.png
