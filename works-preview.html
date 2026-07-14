@@ -4,6 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Works Preview</title>
+    <link rel="preload" as="image" href="assets/portfolio-works/aigc/01.jpg" />
     <style>
       :root {
         --bg: #111917;
@@ -394,6 +395,7 @@
       }
 
       .main-image {
+        position: relative;
         width: 100%;
         height: 100%;
         padding: 18px 24px;
@@ -416,9 +418,27 @@
       }
 
       .main-image.is-switching img {
-        opacity: 0.18;
-        filter: saturate(0.55) contrast(1.35) hue-rotate(18deg);
-        transform: scale(1.08) translateX(10px);
+        opacity: 0.64;
+        filter: saturate(0.7) contrast(1.18);
+      }
+
+      .main-image::after {
+        content: "";
+        position: absolute;
+        left: 24px;
+        right: 24px;
+        bottom: 18px;
+        height: 2px;
+        background: linear-gradient(90deg, transparent, rgba(255, 79, 40, 0.95), transparent);
+        opacity: 0;
+        transform: scaleX(0.2);
+        transform-origin: left center;
+        transition: opacity 140ms ease, transform 220ms ease;
+      }
+
+      .main-image.is-switching::after {
+        opacity: 1;
+        transform: scaleX(1);
       }
 
       .thumbs {
@@ -562,6 +582,107 @@
         font-size: 44px;
         cursor: none;
         text-shadow: 0 0 12px rgba(255, 79, 40, 0.62);
+      }
+
+      @media (max-width: 1180px) {
+        html,
+        body {
+          height: auto;
+          min-height: 100%;
+          overflow: auto;
+        }
+
+        .page {
+          min-height: 100vh;
+          height: auto;
+          padding: 24px 18px 32px;
+        }
+
+        .topbar {
+          grid-template-columns: 1fr;
+          gap: 14px;
+        }
+
+        .ticker {
+          justify-self: start;
+          width: 100%;
+        }
+
+        .project-tabs {
+          left: 0;
+          right: 52px;
+          width: auto;
+        }
+
+        .project-tabs span {
+          font-size: 12px;
+          letter-spacing: 0.12em;
+        }
+
+        .main {
+          grid-template-columns: 1fr;
+          height: auto;
+          gap: 22px;
+        }
+
+        .intro {
+          min-height: 220px;
+          padding-right: 0;
+        }
+
+        .slide-control {
+          position: static;
+          grid-template-columns: 48px minmax(0, auto) 48px;
+          margin-top: 24px;
+        }
+
+        .arrow {
+          width: 48px;
+          height: 48px;
+          font-size: 34px;
+        }
+
+        .dots {
+          flex-wrap: wrap;
+        }
+
+        .control-line {
+          display: none;
+        }
+
+        .works-panel {
+          height: min(68vh, 620px);
+          min-height: 360px;
+        }
+      }
+
+      @media (max-width: 640px) {
+        .stripe {
+          width: 190px;
+        }
+
+        .project-tabs {
+          grid-template-columns: repeat(2, 1fr);
+          height: 96px;
+        }
+
+        .stripe-row {
+          height: 136px;
+        }
+
+        .main-image {
+          padding: 12px;
+        }
+
+        .main-image img {
+          transform: none;
+        }
+
+        .main-image::after {
+          left: 12px;
+          right: 12px;
+          bottom: 12px;
+        }
       }
 
       @keyframes marquee {
@@ -716,7 +837,7 @@
 
           <section class="gallery">
             <div class="main-image">
-              <img id="project-image" src="assets/portfolio-works/aigc/01.jpg" alt="AIGC project preview" />
+              <img id="project-image" src="assets/portfolio-works/aigc/01.jpg" alt="AIGC project preview" decoding="async" fetchpriority="high" />
             </div>
           </section>
         </section>
@@ -873,9 +994,44 @@
           marker.addEventListener("animationend", () => marker.remove(), { once: true });
         };
 
+        const imageCache = new Map();
+        let renderToken = 0;
+
+        const warmImage = (src) => {
+          if (!src) return Promise.resolve();
+          if (imageCache.has(src)) return imageCache.get(src);
+          const loader = new Image();
+          loader.decoding = "async";
+          const ready = new Promise((resolve, reject) => {
+            loader.onload = async () => {
+              try {
+                if (loader.decode) await loader.decode();
+              } catch {}
+              resolve(src);
+            };
+            loader.onerror = reject;
+          });
+          loader.src = src;
+          imageCache.set(src, ready);
+          return ready;
+        };
+
+        const warmNearbyImages = (project, currentIndex) => {
+          const nextImages = [currentIndex + 1, currentIndex + 2, currentIndex - 1]
+            .map((index) => project.images[(index + project.images.length) % project.images.length]);
+          const run = () => nextImages.forEach((src) => warmImage(src).catch(() => {}));
+          if ("requestIdleCallback" in window) {
+            requestIdleCallback(run, { timeout: 900 });
+          } else {
+            window.setTimeout(run, 180);
+          }
+        };
+
         const render = () => {
+          const token = ++renderToken;
           const project = projects[projectIndex];
           imageIndex = ((imageIndex % project.images.length) + project.images.length) % project.images.length;
+          const nextSrc = project.images[imageIndex];
           tabs.forEach((tab, index) => tab.classList.toggle("is-active", index === projectIndex));
           dots.forEach((dot, index) => {
             dot.classList.toggle("is-active", index === imageIndex);
@@ -885,13 +1041,17 @@
           topicTitle.textContent = project.topic;
           categoryText.innerHTML = project.category;
           imageWrap.classList.add("is-switching");
-          window.setTimeout(() => {
-            image.src = project.images[imageIndex];
-            image.alt = project.alt;
-            lightboxImage.src = image.src;
-            lightboxImage.alt = project.alt;
-            imageWrap.classList.remove("is-switching");
-          }, 130);
+          warmImage(nextSrc)
+            .catch(() => nextSrc)
+            .then((src) => {
+              if (token !== renderToken) return;
+              image.src = src;
+              image.alt = project.alt;
+              lightboxImage.src = src;
+              lightboxImage.alt = project.alt;
+              imageWrap.classList.remove("is-switching");
+              warmNearbyImages(project, imageIndex);
+            });
         };
 
         const moveImage = (direction) => {
